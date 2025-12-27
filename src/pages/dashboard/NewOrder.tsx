@@ -112,10 +112,8 @@ const NewOrder = () => {
   const categoryList = Object.keys(groupedCategories);
   const servicesInCategory = selectedCategory ? groupedCategories[selectedCategory] || [] : [];
 
-  const getRateDisplay = (rate: string) => (parseFloat(rate) / 100).toFixed(2);
-  
   const totalPrice = selectedService
-    ? (parseFloat(selectedService.rate) / 100 * quantity) / 1000
+    ? (parseFloat(selectedService.rate) * quantity) / 1000
     : 0;
 
   const minQuantity = selectedService ? parseInt(selectedService.min) : 100;
@@ -352,7 +350,7 @@ const NewOrder = () => {
                 <option value="">Select a service...</option>
                 {servicesInCategory.map((service) => (
                   <option key={service.service} value={service.service}>
-                    {service.name} - ₦{getRateDisplay(service.rate)}/1k (Min: {service.min})
+                    {service.name} - ₦{service.rate}/1k (Min: {service.min})
                   </option>
                 ))}
               </select>
@@ -437,7 +435,7 @@ const NewOrder = () => {
               <div className="bg-secondary/50 rounded-xl p-4 text-sm">
                 <div className="grid grid-cols-2 gap-2 text-muted-foreground">
                   <span>Rate:</span>
-                  <span className="text-foreground">₦{getRateDisplay(selectedService.rate)} per 1000</span>
+                  <span className="text-foreground">₦{selectedService.rate} per 1000</span>
                   <span>Refill:</span>
                   <span className="text-foreground">{selectedService.refill ? "Yes ✓" : "No"}</span>
                   <span>Cancel:</span>
