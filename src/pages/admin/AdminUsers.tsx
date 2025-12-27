@@ -9,8 +9,9 @@ import {
   Play, 
   Trash2,
   ArrowLeft,
-  Mail,
-  Calendar
+  Calendar,
+  Wallet,
+  Loader2
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -22,6 +23,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
@@ -33,6 +35,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { useCurrency } from "@/hooks/useCurrency";
 import { Badge } from "@/components/ui/badge";
@@ -54,6 +64,8 @@ const AdminUsers = () => {
   const [search, setSearch] = useState("");
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
   const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
+  const [addFundsUser, setAddFundsUser] = useState<UserProfile | null>(null);
+  const [fundsAmount, setFundsAmount] = useState("");
 
   // Fetch users with their auth data
   const { data: users, isLoading } = useQuery({
@@ -92,11 +104,39 @@ const AdminUsers = () => {
     },
   });
 
+  // Add funds mutation
+  const addFundsMutation = useMutation({
+    mutationFn: async ({ userId, amount, currentBalance }: { userId: string; amount: number; currentBalance: number }) => {
+      const newBalance = currentBalance + amount;
+      const { error } = await supabase
+        .from("profiles")
+        .update({ balance: newBalance })
+        .eq("id", userId);
+      
+      if (error) throw error;
+      return { newBalance };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast({ 
+        title: "Funds added successfully",
+        description: `New balance: ${formatAmount(data.newBalance)}`
+      });
+      setAddFundsUser(null);
+      setFundsAmount("");
+    },
+    onError: (error: Error) => {
+      toast({ 
+        title: "Failed to add funds", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    },
+  });
+
   // Delete user mutation
   const deleteUserMutation = useMutation({
     mutationFn: async (user: UserProfile) => {
-      // First, add email to blocked list (we'll need to get email from auth)
-      // For now, we'll just delete the profile which cascades
       const { error: deleteError } = await supabase
         .from("profiles")
         .delete()
@@ -104,7 +144,6 @@ const AdminUsers = () => {
       
       if (deleteError) throw deleteError;
 
-      // Add username as blocked (as a workaround since we can't easily get email)
       if (user.username) {
         await supabase
           .from("blocked_emails")
@@ -126,6 +165,26 @@ const AdminUsers = () => {
       });
     },
   });
+
+  const handleAddFunds = () => {
+    const amount = parseFloat(fundsAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast({
+        title: "Invalid amount",
+        description: "Please enter a valid positive number.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (addFundsUser) {
+      addFundsMutation.mutate({
+        userId: addFundsUser.id,
+        amount,
+        currentBalance: addFundsUser.balance,
+      });
+    }
+  };
 
   const filteredUsers = users?.filter(user => 
     user.username?.toLowerCase().includes(search.toLowerCase()) ||
@@ -241,6 +300,13 @@ const AdminUsers = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => setAddFundsUser(user)}
+                          >
+                            <Wallet className="h-4 w-4 mr-2 text-primary" />
+                            Add Funds
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
                           {user.status !== 'active' && (
                             <DropdownMenuItem
                               onClick={() => updateStatusMutation.mutate({ userId: user.id, status: 'active' })}
@@ -265,6 +331,7 @@ const AdminUsers = () => {
                               Pause
                             </DropdownMenuItem>
                           )}
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem
                             className="text-destructive"
                             onClick={() => {
@@ -285,6 +352,64 @@ const AdminUsers = () => {
           </table>
         </div>
       </div>
+
+      {/* Add Funds Dialog */}
+      <Dialog open={!!addFundsUser} onOpenChange={() => { setAddFundsUser(null); setFundsAmount(""); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Funds</DialogTitle>
+            <DialogDescription>
+              Add funds to <strong>{addFundsUser?.username}</strong>'s account.
+              <br />
+              <span className="text-muted-foreground">
+                Current balance: {formatAmount(addFundsUser?.balance || 0)}
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Amount to Add (₦)
+            </label>
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              value={fundsAmount}
+              onChange={(e) => setFundsAmount(e.target.value)}
+              placeholder="Enter amount..."
+              className="h-12 bg-secondary border-border"
+            />
+            {fundsAmount && !isNaN(parseFloat(fundsAmount)) && parseFloat(fundsAmount) > 0 && (
+              <p className="text-sm text-muted-foreground mt-2">
+                New balance will be: {formatAmount((addFundsUser?.balance || 0) + parseFloat(fundsAmount))}
+              </p>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setAddFundsUser(null); setFundsAmount(""); }}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleAddFunds}
+              disabled={addFundsMutation.isPending || !fundsAmount}
+            >
+              {addFundsMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                <>
+                  <Wallet className="h-4 w-4 mr-2" />
+                  Add Funds
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deleteUserId} onOpenChange={() => setDeleteUserId(null)}>
