@@ -3,13 +3,14 @@ import { ArrowRight, Zap, Shield, Clock, TrendingUp, Check } from "lucide-react"
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Footer } from "@/components/Footer";
+import { socialIcons } from "@/components/icons/SocialIcons";
 
 const platforms = [
-  { name: "Instagram", icon: "📸" },
-  { name: "TikTok", icon: "🎵" },
-  { name: "YouTube", icon: "▶️" },
-  { name: "Twitter", icon: "𝕏" },
-  { name: "LinkedIn", icon: "💼" },
+  { id: "instagram", name: "Instagram" },
+  { id: "tiktok", name: "TikTok" },
+  { id: "youtube", name: "YouTube" },
+  { id: "twitter", name: "Twitter" },
+  { id: "linkedin", name: "LinkedIn" },
 ];
 
 const features = [
@@ -35,25 +36,6 @@ const features = [
   },
 ];
 
-const pricingPlans = [
-  {
-    name: "Starter",
-    price: "10",
-    features: ["1,000 Followers", "500 Likes", "Basic Support", "1 Platform"],
-  },
-  {
-    name: "Pro",
-    price: "49",
-    popular: true,
-    features: ["10,000 Followers", "5,000 Likes", "Priority Support", "All Platforms", "Refill Guarantee"],
-  },
-  {
-    name: "Business",
-    price: "199",
-    features: ["50,000 Followers", "25,000 Likes", "Dedicated Manager", "All Platforms", "Refill Guarantee", "API Access"],
-  },
-];
-
 const Landing = () => {
   return (
     <div className="min-h-screen bg-background">
@@ -75,8 +57,8 @@ const Landing = () => {
             <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Features
             </a>
-            <a href="#pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              Pricing
+            <a href="#platforms" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              Platforms
             </a>
             <a href="#faq" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               FAQ
@@ -155,9 +137,9 @@ const Landing = () => {
                   Start Growing <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <a href="#pricing">
+              <a href="#features">
                 <Button variant="outline" size="lg">
-                  View Pricing
+                  Learn More
                 </Button>
               </a>
             </motion.div>
@@ -186,22 +168,26 @@ const Landing = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.5 }}
+              id="platforms"
             >
               <p className="text-sm text-muted-foreground mb-6">Trusted by influencers from</p>
               <div className="flex items-center justify-center gap-8 flex-wrap">
-                {platforms.map((platform, index) => (
-                  <motion.div
-                    key={platform.name}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.6 + index * 0.1 }}
-                    whileHover={{ scale: 1.1, y: -5 }}
-                    className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors cursor-pointer"
-                  >
-                    <span className="text-2xl">{platform.icon}</span>
-                    <span className="text-sm font-medium hidden sm:block">{platform.name}</span>
-                  </motion.div>
-                ))}
+                {platforms.map((platform, index) => {
+                  const Icon = socialIcons[platform.id];
+                  return (
+                    <motion.div
+                      key={platform.name}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.6 + index * 0.1 }}
+                      whileHover={{ scale: 1.1, y: -5 }}
+                      className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                    >
+                      {Icon && <Icon className="h-6 w-6" />}
+                      <span className="text-sm font-medium hidden sm:block">{platform.name}</span>
+                    </motion.div>
+                  );
+                })}
               </div>
             </motion.div>
           </div>
@@ -246,69 +232,8 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Pricing */}
-      <section id="pricing" className="py-24">
-        <div className="container mx-auto px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Simple, Transparent Pricing
-            </h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">
-              Choose the plan that's right for you. No hidden fees.
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {pricingPlans.map((plan, index) => (
-              <motion.div
-                key={plan.name}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className={`relative bg-card rounded-2xl border p-8 ${
-                  plan.popular ? "border-primary shadow-glow" : "border-border"
-                }`}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full">
-                    Most Popular
-                  </div>
-                )}
-                <h3 className="text-xl font-semibold text-foreground mb-2">{plan.name}</h3>
-                <div className="mb-6">
-                  <span className="text-4xl font-bold text-foreground">${plan.price}</span>
-                  <span className="text-muted-foreground">/month</span>
-                </div>
-                <ul className="space-y-3 mb-8">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Check className="h-4 w-4 text-primary" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                <Link to="/auth">
-                  <Button
-                    variant={plan.popular ? "hero" : "outline"}
-                    className="w-full"
-                  >
-                    Get Started
-                  </Button>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* CTA */}
-      <section className="py-24 bg-secondary/30">
+      <section className="py-24">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 30 }}

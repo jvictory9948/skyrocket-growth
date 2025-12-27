@@ -4,6 +4,7 @@ import { CreditCard, Bitcoin, Wallet, Check, Sparkles, Loader2 } from "lucide-re
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrency } from "@/hooks/useCurrency";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -24,6 +25,7 @@ const presetAmounts = [
 
 const Funds = () => {
   const { user, profile, refreshProfile } = useAuth();
+  const { formatAmount } = useCurrency();
   const [selectedMethod, setSelectedMethod] = useState("card");
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState("");
@@ -40,7 +42,6 @@ const Funds = () => {
     setIsLoading(true);
 
     try {
-      // Demo: Just add funds directly (in production, this would go through Stripe)
       const newBalance = (profile?.balance || 0) + totalCredit;
       
       const { error } = await supabase
@@ -54,7 +55,7 @@ const Funds = () => {
 
       toast({
         title: "Funds added!",
-        description: `$${totalCredit.toFixed(2)} has been added to your balance.`,
+        description: `${formatAmount(totalCredit)} has been added to your balance.`,
       });
 
       setSelectedAmount(null);
@@ -192,7 +193,9 @@ const Funds = () => {
                     <Check className="h-4 w-4 text-primary" />
                   </div>
                 )}
-                <div className="text-2xl font-bold text-foreground">${amount.value}</div>
+                <div className="text-2xl font-bold text-foreground">
+                  {formatAmount(amount.value)}
+                </div>
                 {amount.bonus > 0 && (
                   <div className="flex items-center justify-center gap-1 mt-2 text-xs font-semibold text-primary">
                     <Sparkles className="h-3 w-3" />
@@ -205,7 +208,7 @@ const Funds = () => {
 
           <div className="mb-6">
             <label className="block text-sm font-medium text-foreground mb-2">
-              Or enter custom amount
+              Or enter custom amount (USD)
             </label>
             <Input
               type="number"
@@ -224,21 +227,21 @@ const Funds = () => {
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm text-muted-foreground">Amount</span>
               <span className="text-sm font-medium text-foreground">
-                ${effectiveAmount.toFixed(2)}
+                {formatAmount(effectiveAmount)}
               </span>
             </div>
             {bonus > 0 && (
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-muted-foreground">Bonus ({bonus}%)</span>
                 <span className="text-sm font-medium text-primary">
-                  +${((effectiveAmount * bonus) / 100).toFixed(2)}
+                  +{formatAmount((effectiveAmount * bonus) / 100)}
                 </span>
               </div>
             )}
             <div className="flex justify-between items-center pt-2 border-t border-border">
               <span className="text-sm font-semibold text-foreground">Total Credit</span>
               <span className="text-lg font-bold text-foreground">
-                ${totalCredit.toFixed(2)}
+                {formatAmount(totalCredit)}
               </span>
             </div>
           </div>
@@ -253,7 +256,7 @@ const Funds = () => {
             {isLoading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
-              `Add $${effectiveAmount.toFixed(2)} to Balance`
+              `Add ${formatAmount(effectiveAmount)} to Balance`
             )}
           </Button>
         </motion.div>

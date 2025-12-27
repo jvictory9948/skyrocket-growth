@@ -3,6 +3,8 @@ import { motion } from "framer-motion";
 import { ExternalLink, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrency } from "@/hooks/useCurrency";
+import { socialIcons } from "@/components/icons/SocialIcons";
 
 type OrderStatus = "pending" | "processing" | "completed" | "cancelled";
 
@@ -26,6 +28,7 @@ const statusStyles: Record<OrderStatus, string> = {
 
 const Orders = () => {
   const { user } = useAuth();
+  const { formatAmount } = useCurrency();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -91,98 +94,108 @@ const Orders = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {orders.map((order, index) => (
-                    <motion.tr
-                      key={order.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.03 }}
-                      className="border-t border-border hover:bg-accent/30 transition-colors"
-                    >
-                      <td className="px-6 py-4 text-sm font-mono text-foreground">
-                        #{order.id.slice(0, 8)}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-muted-foreground">
-                        {new Date(order.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-foreground capitalize">
-                        {order.platform}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-foreground max-w-[200px] truncate">
-                        {order.service}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-foreground">
-                        {order.quantity.toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 text-sm font-medium text-foreground">
-                        ${Number(order.charge).toFixed(2)}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold capitalize ${
-                            statusStyles[order.status]
-                          }`}
-                        >
-                          {order.status}
-                        </span>
-                      </td>
-                    </motion.tr>
-                  ))}
+                  {orders.map((order, index) => {
+                    const PlatformIcon = socialIcons[order.platform];
+                    return (
+                      <motion.tr
+                        key={order.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.03 }}
+                        className="border-t border-border hover:bg-accent/30 transition-colors"
+                      >
+                        <td className="px-6 py-4 text-sm font-mono text-foreground">
+                          #{order.id.slice(0, 8)}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-muted-foreground">
+                          {new Date(order.created_at).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            {PlatformIcon && <PlatformIcon className="h-4 w-4 text-muted-foreground" />}
+                            <span className="text-sm text-foreground capitalize">{order.platform}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-foreground max-w-[200px] truncate">
+                          {order.service}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-foreground">
+                          {order.quantity.toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 text-sm font-medium text-foreground">
+                          {formatAmount(Number(order.charge))}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold capitalize ${
+                              statusStyles[order.status]
+                            }`}
+                          >
+                            {order.status}
+                          </span>
+                        </td>
+                      </motion.tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
 
             {/* Mobile Cards */}
             <div className="md:hidden p-4 space-y-4">
-              {orders.map((order, index) => (
-                <motion.div
-                  key={order.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="bg-secondary/50 rounded-xl p-4 space-y-3"
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <span className="text-sm font-semibold text-foreground font-mono">
-                        #{order.id.slice(0, 8)}
+              {orders.map((order, index) => {
+                const PlatformIcon = socialIcons[order.platform];
+                return (
+                  <motion.div
+                    key={order.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="bg-secondary/50 rounded-xl p-4 space-y-3"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="text-sm font-semibold text-foreground font-mono">
+                          #{order.id.slice(0, 8)}
+                        </span>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(order.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <span
+                        className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold capitalize ${
+                          statusStyles[order.status]
+                        }`}
+                      >
+                        {order.status}
                       </span>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(order.created_at).toLocaleDateString()}
-                      </p>
                     </div>
-                    <span
-                      className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold capitalize ${
-                        statusStyles[order.status]
-                      }`}
-                    >
-                      {order.status}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground capitalize">{order.platform}</p>
+                    <div className="flex items-center gap-2">
+                      {PlatformIcon && <PlatformIcon className="h-4 w-4 text-muted-foreground" />}
+                      <span className="text-sm font-medium text-foreground capitalize">{order.platform}</span>
+                    </div>
                     <p className="text-xs text-muted-foreground truncate">{order.service}</p>
-                  </div>
-                  <div className="flex justify-between items-center pt-2 border-t border-border">
-                    <div>
-                      <span className="text-lg font-bold text-foreground">
-                        ${Number(order.charge).toFixed(2)}
-                      </span>
-                      <span className="text-xs text-muted-foreground ml-2">
-                        {order.quantity.toLocaleString()} units
-                      </span>
+                    <div className="flex justify-between items-center pt-2 border-t border-border">
+                      <div>
+                        <span className="text-lg font-bold text-foreground">
+                          {formatAmount(Number(order.charge))}
+                        </span>
+                        <span className="text-xs text-muted-foreground ml-2">
+                          {order.quantity.toLocaleString()} units
+                        </span>
+                      </div>
+                      <a
+                        href={order.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-muted-foreground flex items-center gap-1 hover:text-primary"
+                      >
+                        View Link <ExternalLink className="h-3 w-3" />
+                      </a>
                     </div>
-                    <a
-                      href={order.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-muted-foreground flex items-center gap-1 hover:text-primary"
-                    >
-                      View Link <ExternalLink className="h-3 w-3" />
-                    </a>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                );
+              })}
             </div>
           </>
         )}

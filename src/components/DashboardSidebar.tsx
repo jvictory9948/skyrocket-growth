@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  LayoutDashboard,
   ShoppingCart,
   History,
   Wallet,
@@ -15,17 +14,20 @@ import {
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrency } from "@/hooks/useCurrency";
 
 const navItems = [
   { name: "New Order", href: "/dashboard", icon: ShoppingCart },
   { name: "Orders", href: "/dashboard/orders", icon: History },
   { name: "Add Funds", href: "/dashboard/funds", icon: Wallet },
   { name: "Support", href: "/dashboard/support", icon: HelpCircle },
+  { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
 export const DashboardSidebar = () => {
   const location = useLocation();
   const { profile, signOut } = useAuth();
+  const { formatAmount } = useCurrency();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const isActive = (href: string) => {
@@ -52,7 +54,7 @@ export const DashboardSidebar = () => {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 bg-accent rounded-full pl-3 pr-1 py-1">
             <span className="text-sm font-semibold text-foreground">
-              ${profile?.balance?.toFixed(2) || "0.00"}
+              {formatAmount(profile?.balance || 0)}
             </span>
             <Link to="/dashboard/funds">
               <Button variant="icon" size="icon" className="h-7 w-7 bg-primary text-primary-foreground">
@@ -135,7 +137,7 @@ export const DashboardSidebar = () => {
             <p className="text-xs text-muted-foreground mb-1">Your Balance</p>
             <div className="flex items-center justify-between">
               <span className="text-2xl font-bold text-foreground">
-                ${profile?.balance?.toFixed(2) || "0.00"}
+                {formatAmount(profile?.balance || 0)}
               </span>
               <Link to="/dashboard/funds">
                 <Button variant="default" size="sm">
@@ -180,7 +182,6 @@ export const DashboardSidebar = () => {
               <p className="text-sm font-medium text-foreground truncate">
                 {profile?.username || "User"}
               </p>
-              <p className="text-xs text-muted-foreground">Pro Plan</p>
             </div>
           </div>
           <Button

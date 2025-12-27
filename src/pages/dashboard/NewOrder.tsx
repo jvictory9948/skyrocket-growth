@@ -1,21 +1,23 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link, Loader2, Minus, Plus, Check } from "lucide-react";
+import { Link as LinkIcon, Loader2, Minus, Plus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrency } from "@/hooks/useCurrency";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { socialIcons } from "@/components/icons/SocialIcons";
 
 const platforms = [
-  { id: "instagram", name: "Instagram", icon: "📸" },
-  { id: "tiktok", name: "TikTok", icon: "🎵" },
-  { id: "youtube", name: "YouTube", icon: "▶️" },
-  { id: "twitter", name: "Twitter", icon: "𝕏" },
-  { id: "facebook", name: "Facebook", icon: "👥" },
-  { id: "telegram", name: "Telegram", icon: "✈️" },
-  { id: "discord", name: "Discord", icon: "🎮" },
-  { id: "spotify", name: "Spotify", icon: "🎧" },
+  { id: "instagram", name: "Instagram" },
+  { id: "tiktok", name: "TikTok" },
+  { id: "youtube", name: "YouTube" },
+  { id: "twitter", name: "Twitter" },
+  { id: "facebook", name: "Facebook" },
+  { id: "telegram", name: "Telegram" },
+  { id: "discord", name: "Discord" },
+  { id: "spotify", name: "Spotify" },
 ];
 
 const services: Record<string, { id: string; name: string; price: number }[]> = {
@@ -59,6 +61,7 @@ const services: Record<string, { id: string; name: string; price: number }[]> = 
 
 const NewOrder = () => {
   const { user, profile, refreshProfile } = useAuth();
+  const { formatAmount } = useCurrency();
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
   const [selectedService, setSelectedService] = useState<string>("");
   const [quantity, setQuantity] = useState(1000);
@@ -93,7 +96,6 @@ const NewOrder = () => {
     setIsLoading(true);
 
     try {
-      // Create order
       const { error: orderError } = await supabase.from("orders").insert({
         user_id: user.id,
         platform: selectedPlatform,
@@ -106,7 +108,6 @@ const NewOrder = () => {
 
       if (orderError) throw orderError;
 
-      // Deduct balance
       const newBalance = (profile?.balance || 0) - totalPrice;
       const { error: balanceError } = await supabase
         .from("profiles")
@@ -161,27 +162,30 @@ const NewOrder = () => {
             1. Select Platform
           </label>
           <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
-            {platforms.map((platform) => (
-              <motion.button
-                key={platform.id}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => {
-                  setSelectedPlatform(platform.id);
-                  setSelectedService("");
-                }}
-                className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all ${
-                  selectedPlatform === platform.id
-                    ? "bg-primary/10 ring-2 ring-primary"
-                    : "bg-secondary hover:bg-accent"
-                }`}
-              >
-                <span className="text-2xl mb-1">{platform.icon}</span>
-                <span className="text-xs font-medium text-muted-foreground hidden md:block">
-                  {platform.name}
-                </span>
-              </motion.button>
-            ))}
+            {platforms.map((platform) => {
+              const Icon = socialIcons[platform.id];
+              return (
+                <motion.button
+                  key={platform.id}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    setSelectedPlatform(platform.id);
+                    setSelectedService("");
+                  }}
+                  className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all ${
+                    selectedPlatform === platform.id
+                      ? "bg-primary/10 ring-2 ring-primary"
+                      : "bg-secondary hover:bg-accent"
+                  }`}
+                >
+                  {Icon && <Icon className="h-6 w-6 mb-1" />}
+                  <span className="text-xs font-medium text-muted-foreground hidden md:block">
+                    {platform.name}
+                  </span>
+                </motion.button>
+              );
+            })}
           </div>
         </div>
 
@@ -222,13 +226,12 @@ const NewOrder = () => {
               exit={{ opacity: 0, height: 0 }}
               className="space-y-6 mb-8"
             >
-              {/* Link Input */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-3">
                   3. Enter URL
                 </label>
                 <div className="relative">
-                  <Link className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input
                     type="url"
                     value={link}
@@ -239,7 +242,6 @@ const NewOrder = () => {
                 </div>
               </div>
 
-              {/* Quantity */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-3">
                   4. Set Quantity
@@ -293,7 +295,7 @@ const NewOrder = () => {
           <div className="flex-1">
             <div className="text-sm text-muted-foreground">Total Charge</div>
             <div className="text-3xl font-bold text-foreground">
-              ${totalPrice.toFixed(2)}
+              {formatAmount(totalPrice)}
             </div>
             {selectedServiceData && (
               <div className="text-xs text-muted-foreground mt-1">
