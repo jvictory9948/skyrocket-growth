@@ -2,11 +2,14 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
+type UserStatus = 'active' | 'suspended' | 'paused';
+
 interface Profile {
   id: string;
   username: string | null;
   avatar_url: string | null;
   balance: number;
+  status: UserStatus;
 }
 
 interface AuthContextType {
@@ -14,6 +17,8 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
+  isAdmin: boolean;
+  userStatus: UserStatus;
   signUp: (email: string, password: string, username: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -27,6 +32,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const fetchProfile = async (userId: string) => {
     const { data, error } = await supabase
@@ -41,7 +47,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         username: data.username,
         avatar_url: data.avatar_url,
         balance: Number(data.balance),
+        status: (data.status as UserStatus) || 'active',
       });
+    }
+  };
+
+  const checkAdminRole = async (userId: string) => {
+    const { data, error } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    if (!error && data) {
+      setIsAdmin(true);
+    } else {
+      setIsAdmin(false);
     }
   };
 
@@ -56,9 +78,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // Defer profile fetch to avoid deadlock
           setTimeout(() => {
             fetchProfile(session.user.id);
+            checkAdminRole(session.user.id);
           }, 0);
         } else {
           setProfile(null);
+          setIsAdmin(false);
         }
         setLoading(false);
       }
@@ -70,6 +94,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchProfile(session.user.id);
+        checkAdminRole(session.user.id);
       }
       setLoading(false);
     });
@@ -78,6 +103,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signUp = async (email: string, password: string, username: string) => {
+    // Check if email is blocked
+    const { data: blockedEmail } = await supabase
+      .from("blocked_emails")
+      .select("email")
+      .eq("email", email.toLowerCase())
+      .maybeSingle();
+
+    if (blockedEmail) {
+      return { error: new Error("This email address has been blocked and cannot be used for registration.") };
+    }
+
     const redirectUrl = `${window.location.origin}/`;
     
     const { error } = await supabase.auth.signUp({
@@ -104,13 +140,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = async () => {
     await supabase.auth.signOut();
     setProfile(null);
+    setIsAdmin(false);
   };
 
   const refreshProfile = async () => {
     if (user) {
       await fetchProfile(user.id);
+      await checkAdminRole(user.id);
     }
   };
+
+  const userStatus: UserStatus = profile?.status || 'active';
 
   return (
     <AuthContext.Provider
@@ -119,6 +159,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         session,
         profile,
         loading,
+        isAdmin,
+        userStatus,
         signUp,
         signIn,
         signOut,
