@@ -49,7 +49,7 @@ const platforms = [
 ];
 
 const NewOrder = () => {
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile, userStatus } = useAuth();
   const { formatAmount } = useCurrency();
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -141,6 +141,16 @@ const NewOrder = () => {
 
   const handleSubmit = async () => {
     if (!user || !selectedService || !selectedPlatform) return;
+
+    // Check if user is paused
+    if (userStatus === 'paused') {
+      toast({
+        title: "Account Paused",
+        description: "Your account has been paused. Please contact support.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     if ((profile?.balance || 0) < totalPrice) {
       toast({
@@ -462,11 +472,13 @@ const NewOrder = () => {
           <Button
             variant="hero"
             size="xl"
-            disabled={!selectedService || !link || isLoading}
+            disabled={!selectedService || !link || isLoading || userStatus === 'paused'}
             onClick={handleSubmit}
             className="min-w-[180px]"
           >
-            {isLoading ? (
+            {userStatus === 'paused' ? (
+              "Account Paused"
+            ) : isLoading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
             ) : orderPlaced ? (
               <>
