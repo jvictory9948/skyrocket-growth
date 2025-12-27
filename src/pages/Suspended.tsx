@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ShieldX, LogOut, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -5,9 +6,11 @@ import { useAuth } from "@/hooks/useAuth";
 
 const Suspended = () => {
   const { signOut } = useAuth();
+  const navigate = useNavigate();
 
   const handleSignOut = async () => {
     await signOut();
+    navigate("/auth");
   };
 
   return (
