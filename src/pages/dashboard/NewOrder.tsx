@@ -52,6 +52,7 @@ const NewOrder = () => {
   const { user, profile, refreshProfile } = useAuth();
   const { formatAmount } = useCurrency();
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedService, setSelectedService] = useState<ApiService | null>(null);
   const [quantity, setQuantity] = useState(1000);
   const [link, setLink] = useState("");
@@ -95,7 +96,21 @@ const NewOrder = () => {
     });
   };
 
+  // Group services by category for the selected platform
+  const getGroupedCategories = (platformId: string): GroupedServices => {
+    const services = getPlatformServices(platformId);
+    return services.reduce((acc, service) => {
+      const cat = service.category || "Other";
+      if (!acc[cat]) acc[cat] = [];
+      acc[cat].push(service);
+      return acc;
+    }, {} as GroupedServices);
+  };
+
   const platformServices = selectedPlatform ? getPlatformServices(selectedPlatform) : [];
+  const groupedCategories = selectedPlatform ? getGroupedCategories(selectedPlatform) : {};
+  const categoryList = Object.keys(groupedCategories);
+  const servicesInCategory = selectedCategory ? groupedCategories[selectedCategory] || [] : [];
 
   const totalPrice = selectedService
     ? (parseFloat(selectedService.rate) * quantity) / 1000
@@ -111,6 +126,17 @@ const NewOrder = () => {
   const handleServiceSelect = (service: ApiService) => {
     setSelectedService(service);
     setQuantity(parseInt(service.min));
+  };
+
+  const handlePlatformSelect = (platformId: string) => {
+    setSelectedPlatform(platformId);
+    setSelectedCategory(null);
+    setSelectedService(null);
+  };
+
+  const handleCategorySelect = (category: string) => {
+    setSelectedCategory(category);
+    setSelectedService(null);
   };
 
   const handleSubmit = async () => {
@@ -227,10 +253,7 @@ const NewOrder = () => {
                   key={platform.id}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => {
-                    setSelectedPlatform(platform.id);
-                    setSelectedService(null);
-                  }}
+                  onClick={() => handlePlatformSelect(platform.id)}
                   className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all relative ${
                     selectedPlatform === platform.id
                       ? "bg-primary/10 ring-2 ring-primary"
@@ -260,7 +283,7 @@ const NewOrder = () => {
           </div>
         )}
 
-        {/* Service Selection */}
+        {/* Category Selection */}
         <AnimatePresence>
           {selectedPlatform && !loadingServices && (
             <motion.div
@@ -270,29 +293,67 @@ const NewOrder = () => {
               className="mb-8"
             >
               <label className="block text-sm font-medium text-foreground mb-3">
-                2. Choose Service ({platformServices.length} available)
+                2. Choose Category ({categoryList.length} available)
               </label>
-              {platformServices.length === 0 ? (
-                <p className="text-muted-foreground text-sm">No services found for this platform.</p>
+              {categoryList.length === 0 ? (
+                <p className="text-muted-foreground text-sm">No categories found for this platform.</p>
               ) : (
-                <select
-                  value={selectedService?.service || ""}
-                  onChange={(e) => {
-                    const service = platformServices.find(
-                      (s) => s.service === parseInt(e.target.value)
-                    );
-                    if (service) handleServiceSelect(service);
-                  }}
-                  className="w-full h-12 px-4 rounded-xl bg-secondary border border-border text-foreground focus:ring-2 focus:ring-primary focus:border-transparent transition-all appearance-none cursor-pointer"
-                >
-                  <option value="">Select a service...</option>
-                  {platformServices.map((service) => (
-                    <option key={service.service} value={service.service}>
-                      {service.name} - ${service.rate}/1k (Min: {service.min})
-                    </option>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[200px] overflow-y-auto pr-2">
+                  {categoryList.map((category) => (
+                    <motion.button
+                      key={category}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => handleCategorySelect(category)}
+                      className={`flex items-center justify-between p-3 rounded-xl text-left transition-all ${
+                        selectedCategory === category
+                          ? "bg-primary/10 ring-2 ring-primary"
+                          : "bg-secondary hover:bg-accent"
+                      }`}
+                    >
+                      <span className="text-sm font-medium text-foreground truncate pr-2">
+                        {category}
+                      </span>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        {groupedCategories[category].length} services
+                      </span>
+                    </motion.button>
                   ))}
-                </select>
+                </div>
               )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Service Selection */}
+        <AnimatePresence>
+          {selectedCategory && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mb-8"
+            >
+              <label className="block text-sm font-medium text-foreground mb-3">
+                3. Choose Service ({servicesInCategory.length} available)
+              </label>
+              <select
+                value={selectedService?.service || ""}
+                onChange={(e) => {
+                  const service = servicesInCategory.find(
+                    (s) => s.service === parseInt(e.target.value)
+                  );
+                  if (service) handleServiceSelect(service);
+                }}
+                className="w-full h-12 px-4 rounded-xl bg-secondary border border-border text-foreground focus:ring-2 focus:ring-primary focus:border-transparent transition-all appearance-none cursor-pointer"
+              >
+                <option value="">Select a service...</option>
+                {servicesInCategory.map((service) => (
+                  <option key={service.service} value={service.service}>
+                    {service.name} - ₦{service.rate}/1k (Min: {service.min})
+                  </option>
+                ))}
+              </select>
             </motion.div>
           )}
         </AnimatePresence>
@@ -308,7 +369,7 @@ const NewOrder = () => {
             >
               <div>
                 <label className="block text-sm font-medium text-foreground mb-3">
-                  3. Enter URL
+                  4. Enter URL
                 </label>
                 <div className="relative">
                   <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -324,7 +385,7 @@ const NewOrder = () => {
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-3">
-                  4. Set Quantity (Min: {minQuantity.toLocaleString()} - Max: {maxQuantity.toLocaleString()})
+                  5. Set Quantity (Min: {minQuantity.toLocaleString()} - Max: {maxQuantity.toLocaleString()})
                 </label>
                 <div className="flex items-center gap-4">
                   <Button
@@ -374,7 +435,7 @@ const NewOrder = () => {
               <div className="bg-secondary/50 rounded-xl p-4 text-sm">
                 <div className="grid grid-cols-2 gap-2 text-muted-foreground">
                   <span>Rate:</span>
-                  <span className="text-foreground">${selectedService.rate} per 1000</span>
+                  <span className="text-foreground">₦{selectedService.rate} per 1000</span>
                   <span>Refill:</span>
                   <span className="text-foreground">{selectedService.refill ? "Yes ✓" : "No"}</span>
                   <span>Cancel:</span>
