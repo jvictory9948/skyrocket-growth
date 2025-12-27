@@ -1,11 +1,9 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, Phone, Globe, Loader2, Save, DollarSign } from "lucide-react";
+import { User, Mail, Phone, Globe, Loader2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/useAuth";
-import { useCurrency } from "@/hooks/useCurrency";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -24,7 +22,6 @@ const countries = [
 
 const Settings = () => {
   const { user, profile, refreshProfile } = useAuth();
-  const { currency, setCurrency } = useCurrency();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     username: "",
@@ -55,9 +52,6 @@ const Settings = () => {
         phone: data.phone || "",
         country: data.country || "",
       });
-      if (data.currency) {
-        setCurrency(data.currency as "USD" | "NGN");
-      }
     }
   };
 
@@ -74,7 +68,6 @@ const Settings = () => {
           full_name: formData.full_name,
           phone: formData.phone,
           country: formData.country,
-          currency,
         })
         .eq("id", user.id);
 
@@ -95,10 +88,6 @@ const Settings = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleCurrencyToggle = (checked: boolean) => {
-    setCurrency(checked ? "NGN" : "USD");
   };
 
   return (
@@ -201,42 +190,6 @@ const Settings = () => {
                   ))}
                 </select>
               </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Currency Preferences */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-card rounded-2xl shadow-soft border border-border p-6"
-        >
-          <h2 className="text-lg font-semibold text-foreground mb-6">Display Preferences</h2>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <DollarSign className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-foreground">Currency Display</p>
-                <p className="text-xs text-muted-foreground">
-                  Show amounts in {currency === "USD" ? "US Dollars ($)" : "Nigerian Naira (₦)"}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className={`text-sm font-medium ${currency === "USD" ? "text-foreground" : "text-muted-foreground"}`}>
-                USD
-              </span>
-              <Switch
-                checked={currency === "NGN"}
-                onCheckedChange={handleCurrencyToggle}
-              />
-              <span className={`text-sm font-medium ${currency === "NGN" ? "text-foreground" : "text-muted-foreground"}`}>
-                NGN
-              </span>
             </div>
           </div>
         </motion.div>
