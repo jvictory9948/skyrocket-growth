@@ -113,7 +113,7 @@ const NewOrder = () => {
   const servicesInCategory = selectedCategory ? groupedCategories[selectedCategory] || [] : [];
 
   const totalPrice = selectedService
-    ? (parseFloat(selectedService.rate) * quantity) / 1000
+    ? parseFloat(selectedService.rate) * quantity
     : 0;
 
   const minQuantity = selectedService ? parseInt(selectedService.min) : 100;
