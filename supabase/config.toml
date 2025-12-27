@@ -1,1 +1,7 @@
 project_id = "ymbpwultwtkzdzvcrvul"
+
+[functions.get-services]
+verify_jwt = false
+
+[functions.place-order]
+verify_jwt = true

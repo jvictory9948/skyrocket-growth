@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link as LinkIcon, Loader2, Minus, Plus, Check } from "lucide-react";
+import { Link as LinkIcon, Loader2, Minus, Plus, Check, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,6 +8,34 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { socialIcons } from "@/components/icons/SocialIcons";
+
+interface ApiService {
+  service: number;
+  name: string;
+  type: string;
+  category: string;
+  rate: string;
+  min: string;
+  max: string;
+  refill: boolean;
+  cancel: boolean;
+}
+
+interface GroupedServices {
+  [category: string]: ApiService[];
+}
+
+const platformKeywords: Record<string, string[]> = {
+  instagram: ["instagram", "ig ", "insta"],
+  tiktok: ["tiktok", "tik tok", "tt "],
+  youtube: ["youtube", "yt ", "youtuber"],
+  twitter: ["twitter", "tweet", "x "],
+  facebook: ["facebook", "fb "],
+  telegram: ["telegram", "tg "],
+  discord: ["discord"],
+  spotify: ["spotify"],
+  linkedin: ["linkedin"],
+};
 
 const platforms = [
   { id: "instagram", name: "Instagram" },
@@ -20,69 +48,73 @@ const platforms = [
   { id: "spotify", name: "Spotify" },
 ];
 
-const services: Record<string, { id: string; name: string; price: number }[]> = {
-  instagram: [
-    { id: "ig-followers", name: "Followers [Refill] - $0.50/1k", price: 0.5 },
-    { id: "ig-likes", name: "Likes [Real HQ] - $0.20/1k", price: 0.2 },
-    { id: "ig-views", name: "Story Views [Instant] - $0.10/1k", price: 0.1 },
-    { id: "ig-comments", name: "Custom Comments - $2.00/1k", price: 2.0 },
-  ],
-  tiktok: [
-    { id: "tt-followers", name: "Followers [No Drop] - $0.80/1k", price: 0.8 },
-    { id: "tt-likes", name: "Likes [Instant] - $0.15/1k", price: 0.15 },
-    { id: "tt-views", name: "Views [Real] - $0.01/1k", price: 0.01 },
-  ],
-  youtube: [
-    { id: "yt-subs", name: "Subscribers [Real] - $3.00/1k", price: 3.0 },
-    { id: "yt-views", name: "Views [High Retention] - $1.50/1k", price: 1.5 },
-    { id: "yt-likes", name: "Likes [Fast] - $0.80/1k", price: 0.8 },
-  ],
-  twitter: [
-    { id: "tw-followers", name: "Followers [Quality] - $1.00/1k", price: 1.0 },
-    { id: "tw-likes", name: "Likes - $0.30/1k", price: 0.3 },
-    { id: "tw-retweets", name: "Retweets - $0.50/1k", price: 0.5 },
-  ],
-  facebook: [
-    { id: "fb-likes", name: "Page Likes - $1.50/1k", price: 1.5 },
-    { id: "fb-followers", name: "Followers - $1.20/1k", price: 1.2 },
-  ],
-  telegram: [
-    { id: "tg-members", name: "Channel Members - $0.60/1k", price: 0.6 },
-    { id: "tg-views", name: "Post Views - $0.05/1k", price: 0.05 },
-  ],
-  discord: [
-    { id: "dc-members", name: "Server Members - $2.00/1k", price: 2.0 },
-  ],
-  spotify: [
-    { id: "sp-plays", name: "Plays [Premium] - $1.00/1k", price: 1.0 },
-    { id: "sp-followers", name: "Followers - $0.70/1k", price: 0.7 },
-  ],
-};
-
 const NewOrder = () => {
   const { user, profile, refreshProfile } = useAuth();
   const { formatAmount } = useCurrency();
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
-  const [selectedService, setSelectedService] = useState<string>("");
+  const [selectedService, setSelectedService] = useState<ApiService | null>(null);
   const [quantity, setQuantity] = useState(1000);
   const [link, setLink] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [allServices, setAllServices] = useState<ApiService[]>([]);
+  const [loadingServices, setLoadingServices] = useState(true);
 
-  const selectedServiceData = selectedPlatform
-    ? services[selectedPlatform]?.find((s) => s.id === selectedService)
-    : null;
+  useEffect(() => {
+    fetchServices();
+  }, []);
 
-  const totalPrice = selectedServiceData
-    ? (selectedServiceData.price * quantity) / 1000
+  const fetchServices = async () => {
+    setLoadingServices(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('get-services');
+      
+      if (error) throw error;
+      
+      if (Array.isArray(data)) {
+        setAllServices(data);
+      }
+    } catch (error: any) {
+      console.error('Failed to fetch services:', error);
+      toast({
+        title: "Failed to load services",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingServices(false);
+    }
+  };
+
+  const getPlatformServices = (platformId: string): ApiService[] => {
+    const keywords = platformKeywords[platformId] || [];
+    return allServices.filter((service) => {
+      const name = service.name.toLowerCase();
+      const category = service.category.toLowerCase();
+      return keywords.some((kw) => name.includes(kw) || category.includes(kw));
+    });
+  };
+
+  const platformServices = selectedPlatform ? getPlatformServices(selectedPlatform) : [];
+
+  const totalPrice = selectedService
+    ? (parseFloat(selectedService.rate) * quantity) / 1000
     : 0;
 
+  const minQuantity = selectedService ? parseInt(selectedService.min) : 100;
+  const maxQuantity = selectedService ? parseInt(selectedService.max) : 100000;
+
   const handleQuantityChange = (delta: number) => {
-    setQuantity(Math.max(100, Math.min(100000, quantity + delta)));
+    setQuantity(Math.max(minQuantity, Math.min(maxQuantity, quantity + delta)));
+  };
+
+  const handleServiceSelect = (service: ApiService) => {
+    setSelectedService(service);
+    setQuantity(parseInt(service.min));
   };
 
   const handleSubmit = async () => {
-    if (!user || !selectedServiceData || !selectedPlatform) return;
+    if (!user || !selectedService || !selectedPlatform) return;
 
     if ((profile?.balance || 0) < totalPrice) {
       toast({
@@ -96,10 +128,23 @@ const NewOrder = () => {
     setIsLoading(true);
 
     try {
+      // Place order with external API
+      const { data: apiResult, error: apiError } = await supabase.functions.invoke('place-order', {
+        body: {
+          service: selectedService.service,
+          link,
+          quantity,
+        },
+      });
+
+      if (apiError) throw apiError;
+      if (apiResult.error) throw new Error(apiResult.error);
+
+      // Save order to database
       const { error: orderError } = await supabase.from("orders").insert({
         user_id: user.id,
         platform: selectedPlatform,
-        service: selectedServiceData.name,
+        service: selectedService.name,
         link,
         quantity,
         charge: totalPrice,
@@ -108,6 +153,7 @@ const NewOrder = () => {
 
       if (orderError) throw orderError;
 
+      // Update balance
       const newBalance = (profile?.balance || 0) - totalPrice;
       const { error: balanceError } = await supabase
         .from("profiles")
@@ -127,7 +173,7 @@ const NewOrder = () => {
       setTimeout(() => {
         setOrderPlaced(false);
         setSelectedPlatform(null);
-        setSelectedService("");
+        setSelectedService(null);
         setQuantity(1000);
         setLink("");
       }, 2000);
@@ -144,11 +190,22 @@ const NewOrder = () => {
 
   return (
     <div className="p-6 lg:p-8">
-      <div className="mb-8">
-        <h1 className="text-2xl lg:text-3xl font-bold text-foreground">New Order</h1>
-        <p className="text-muted-foreground mt-1">
-          Select your platform and service to get started.
-        </p>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl lg:text-3xl font-bold text-foreground">New Order</h1>
+          <p className="text-muted-foreground mt-1">
+            Select your platform and service to get started.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={fetchServices}
+          disabled={loadingServices}
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${loadingServices ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
       </div>
 
       <motion.div
@@ -164,6 +221,7 @@ const NewOrder = () => {
           <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
             {platforms.map((platform) => {
               const Icon = socialIcons[platform.id];
+              const serviceCount = getPlatformServices(platform.id).length;
               return (
                 <motion.button
                   key={platform.id}
@@ -171,9 +229,9 @@ const NewOrder = () => {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => {
                     setSelectedPlatform(platform.id);
-                    setSelectedService("");
+                    setSelectedService(null);
                   }}
-                  className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all ${
+                  className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all relative ${
                     selectedPlatform === platform.id
                       ? "bg-primary/10 ring-2 ring-primary"
                       : "bg-secondary hover:bg-accent"
@@ -183,15 +241,28 @@ const NewOrder = () => {
                   <span className="text-xs font-medium text-muted-foreground hidden md:block">
                     {platform.name}
                   </span>
+                  {serviceCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 rounded-full">
+                      {serviceCount}
+                    </span>
+                  )}
                 </motion.button>
               );
             })}
           </div>
         </div>
 
+        {/* Loading State */}
+        {loadingServices && (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-3 text-muted-foreground">Loading services...</span>
+          </div>
+        )}
+
         {/* Service Selection */}
         <AnimatePresence>
-          {selectedPlatform && (
+          {selectedPlatform && !loadingServices && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
@@ -199,20 +270,29 @@ const NewOrder = () => {
               className="mb-8"
             >
               <label className="block text-sm font-medium text-foreground mb-3">
-                2. Choose Service
+                2. Choose Service ({platformServices.length} available)
               </label>
-              <select
-                value={selectedService}
-                onChange={(e) => setSelectedService(e.target.value)}
-                className="w-full h-12 px-4 rounded-xl bg-secondary border border-border text-foreground focus:ring-2 focus:ring-primary focus:border-transparent transition-all appearance-none cursor-pointer"
-              >
-                <option value="">Select a service...</option>
-                {services[selectedPlatform]?.map((service) => (
-                  <option key={service.id} value={service.id}>
-                    {service.name}
-                  </option>
-                ))}
-              </select>
+              {platformServices.length === 0 ? (
+                <p className="text-muted-foreground text-sm">No services found for this platform.</p>
+              ) : (
+                <select
+                  value={selectedService?.service || ""}
+                  onChange={(e) => {
+                    const service = platformServices.find(
+                      (s) => s.service === parseInt(e.target.value)
+                    );
+                    if (service) handleServiceSelect(service);
+                  }}
+                  className="w-full h-12 px-4 rounded-xl bg-secondary border border-border text-foreground focus:ring-2 focus:ring-primary focus:border-transparent transition-all appearance-none cursor-pointer"
+                >
+                  <option value="">Select a service...</option>
+                  {platformServices.map((service) => (
+                    <option key={service.service} value={service.service}>
+                      {service.name} - ${service.rate}/1k (Min: {service.min})
+                    </option>
+                  ))}
+                </select>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -244,7 +324,7 @@ const NewOrder = () => {
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-3">
-                  4. Set Quantity
+                  4. Set Quantity (Min: {minQuantity.toLocaleString()} - Max: {maxQuantity.toLocaleString()})
                 </label>
                 <div className="flex items-center gap-4">
                   <Button
@@ -259,7 +339,10 @@ const NewOrder = () => {
                     <Input
                       type="number"
                       value={quantity}
-                      onChange={(e) => setQuantity(Number(e.target.value))}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setQuantity(Math.max(minQuantity, Math.min(maxQuantity, val)));
+                      }}
                       className="text-center text-2xl font-bold h-14 bg-secondary border-border"
                     />
                   </div>
@@ -274,16 +357,28 @@ const NewOrder = () => {
                 </div>
                 <input
                   type="range"
-                  min={100}
-                  max={100000}
+                  min={minQuantity}
+                  max={maxQuantity}
                   step={100}
                   value={quantity}
                   onChange={(e) => setQuantity(Number(e.target.value))}
                   className="w-full mt-4 accent-primary"
                 />
                 <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                  <span>100</span>
-                  <span>100,000</span>
+                  <span>{minQuantity.toLocaleString()}</span>
+                  <span>{maxQuantity.toLocaleString()}</span>
+                </div>
+              </div>
+
+              {/* Service Info */}
+              <div className="bg-secondary/50 rounded-xl p-4 text-sm">
+                <div className="grid grid-cols-2 gap-2 text-muted-foreground">
+                  <span>Rate:</span>
+                  <span className="text-foreground">${selectedService.rate} per 1000</span>
+                  <span>Refill:</span>
+                  <span className="text-foreground">{selectedService.refill ? "Yes ✓" : "No"}</span>
+                  <span>Cancel:</span>
+                  <span className="text-foreground">{selectedService.cancel ? "Yes ✓" : "No"}</span>
                 </div>
               </div>
             </motion.div>
@@ -297,9 +392,9 @@ const NewOrder = () => {
             <div className="text-3xl font-bold text-foreground">
               {formatAmount(totalPrice)}
             </div>
-            {selectedServiceData && (
+            {selectedService && (
               <div className="text-xs text-muted-foreground mt-1">
-                Start: Instant • Speed: 5k/day
+                {selectedService.name}
               </div>
             )}
           </div>
