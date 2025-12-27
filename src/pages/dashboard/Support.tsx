@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, MessageCircle, Mail, Send, Loader2 } from "lucide-react";
+import { ChevronDown, MessageCircle, Mail, Send, Loader2, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -47,6 +47,13 @@ const Support = () => {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const copyEmail = () => {
+    navigator.clipboard.writeText("clydine@proton.me");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -216,14 +223,27 @@ const Support = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 Or reach out directly:
               </p>
-              <div className="space-y-3">
-                <a 
-                  href="mailto:clydine@proton.me" 
-                  className="flex items-center gap-3 text-sm text-foreground hover:text-primary transition-colors"
-                >
-                  <Mail className="h-4 w-4 text-primary" />
-                  clydine@proton.me
-                </a>
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <a 
+                    href="mailto:clydine@proton.me" 
+                    className="flex items-center gap-3 text-sm text-foreground hover:text-primary transition-colors"
+                  >
+                    <Mail className="h-4 w-4 text-primary" />
+                    clydine@proton.me
+                  </a>
+                  <button
+                    onClick={copyEmail}
+                    className="p-1.5 rounded-md hover:bg-accent transition-colors"
+                    title="Copy email"
+                  >
+                    {copied ? (
+                      <Check className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <Copy className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </button>
+                </div>
                 <a
                   href="https://wa.me/2349131220550"
                   target="_blank"
