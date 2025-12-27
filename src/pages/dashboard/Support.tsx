@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, MessageCircle, Mail, Send } from "lucide-react";
+import { ChevronDown, MessageCircle, Mail, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const faqs = [
   {
@@ -40,18 +42,60 @@ const faqs = [
 ];
 
 const Support = () => {
+  const { user } = useAuth();
   const [openIndex, setOpenIndex] = useState<number | null>(0);
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Message sent!",
-      description: "We'll get back to you within 24 hours.",
-    });
-    setSubject("");
-    setMessage("");
+    
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to submit a ticket.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!subject.trim() || !message.trim()) {
+      toast({
+        title: "Error",
+        description: "Please fill in all fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const { error } = await supabase.from("support_tickets").insert({
+        user_id: user.id,
+        subject: subject.trim(),
+        message: message.trim(),
+        status: "open",
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Ticket submitted!",
+        description: "We'll get back to you within 24 hours.",
+      });
+      setSubject("");
+      setMessage("");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to submit ticket.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -123,7 +167,7 @@ const Support = () => {
           transition={{ delay: 0.2 }}
         >
           <h2 className="text-lg font-semibold text-foreground mb-4">
-            Contact Us
+            Submit a Ticket
           </h2>
           <div className="bg-card rounded-2xl border border-border p-6">
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -137,6 +181,7 @@ const Support = () => {
                   placeholder="What's your issue about?"
                   className="h-12 bg-secondary border-border"
                   required
+                  disabled={isSubmitting}
                 />
               </div>
               <div>
@@ -149,11 +194,21 @@ const Support = () => {
                   placeholder="Describe your issue in detail..."
                   className="min-h-[150px] bg-secondary border-border"
                   required
+                  disabled={isSubmitting}
                 />
               </div>
-              <Button type="submit" variant="hero" className="w-full">
-                <Send className="h-4 w-4 mr-2" />
-                Send Message
+              <Button 
+                type="submit" 
+                variant="hero" 
+                className="w-full"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4 mr-2" />
+                )}
+                {isSubmitting ? "Submitting..." : "Submit Ticket"}
               </Button>
             </form>
 
