@@ -217,10 +217,13 @@ const Support = () => {
                 Or reach out directly:
               </p>
               <div className="space-y-3">
-                <div className="flex items-center gap-3 text-sm text-foreground">
+                <a 
+                  href="mailto:clydine@proton.me" 
+                  className="flex items-center gap-3 text-sm text-foreground hover:text-primary transition-colors"
+                >
                   <Mail className="h-4 w-4 text-primary" />
                   clydine@proton.me
-                </div>
+                </a>
                 <a
                   href="https://wa.me/2349131220550"
                   target="_blank"
