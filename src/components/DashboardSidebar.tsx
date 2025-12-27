@@ -11,6 +11,7 @@ import {
   Menu,
   X,
   Plus,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,7 +27,7 @@ const navItems = [
 
 export const DashboardSidebar = () => {
   const location = useLocation();
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, isAdmin } = useAuth();
   const { formatAmount } = useCurrency();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
@@ -106,6 +107,20 @@ export const DashboardSidebar = () => {
               {item.name}
             </Link>
           ))}
+          {isAdmin && (
+            <Link
+              to="/dashboard/admin"
+              onClick={() => setIsMobileOpen(false)}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
+                location.pathname.startsWith("/dashboard/admin")
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
+              }`}
+            >
+              <ShieldCheck className="h-5 w-5" />
+              Admin
+            </Link>
+          )}
         </nav>
 
         <div className="absolute bottom-4 left-4 right-4">
@@ -170,6 +185,25 @@ export const DashboardSidebar = () => {
               )}
             </Link>
           ))}
+          {isAdmin && (
+            <Link
+              to="/dashboard/admin"
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                location.pathname.startsWith("/dashboard/admin")
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
+              }`}
+            >
+              <ShieldCheck className="h-5 w-5" />
+              Admin
+              {location.pathname.startsWith("/dashboard/admin") && (
+                <motion.div
+                  layoutId="sidebar-indicator-admin"
+                  className="ml-auto w-1.5 h-1.5 bg-primary rounded-full"
+                />
+              )}
+            </Link>
+          )}
         </nav>
 
         {/* User & Logout */}
