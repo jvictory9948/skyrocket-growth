@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { motion } from "framer-motion";
 import { 
   Users, 
@@ -8,7 +7,10 @@ import {
   TrendingUp,
   UserX,
   Pause,
-  Activity
+  Activity,
+  Settings,
+  Calendar,
+  DollarSign
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -24,9 +26,13 @@ const AdminDashboard = () => {
     queryFn: async () => {
       const [usersRes, ordersRes, ticketsRes] = await Promise.all([
         supabase.from("profiles").select("id, status", { count: "exact" }),
-        supabase.from("orders").select("id, charge", { count: "exact" }),
+        supabase.from("orders").select("id, charge, created_at", { count: "exact" }),
         supabase.from("support_tickets").select("id, status", { count: "exact" }),
       ]);
+
+      const now = new Date();
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
       const totalUsers = usersRes.count || 0;
       const suspendedUsers = usersRes.data?.filter(u => u.status === 'suspended').length || 0;
@@ -34,6 +40,15 @@ const AdminDashboard = () => {
       const activeUsers = usersRes.data?.filter(u => u.status === 'active').length || 0;
       const totalOrders = ordersRes.count || 0;
       const totalRevenue = ordersRes.data?.reduce((sum, o) => sum + Number(o.charge), 0) || 0;
+      
+      // Daily revenue
+      const dailyRevenue = ordersRes.data?.filter(o => new Date(o.created_at) >= startOfDay)
+        .reduce((sum, o) => sum + Number(o.charge), 0) || 0;
+      
+      // Monthly revenue
+      const monthlyRevenue = ordersRes.data?.filter(o => new Date(o.created_at) >= startOfMonth)
+        .reduce((sum, o) => sum + Number(o.charge), 0) || 0;
+
       const openTickets = ticketsRes.data?.filter(t => t.status === 'open').length || 0;
 
       return {
@@ -43,6 +58,8 @@ const AdminDashboard = () => {
         pausedUsers,
         totalOrders,
         totalRevenue,
+        dailyRevenue,
+        monthlyRevenue,
         openTickets,
       };
     },
@@ -85,13 +102,6 @@ const AdminDashboard = () => {
       href: "/dashboard/admin/orders"
     },
     { 
-      title: "Total Revenue", 
-      value: formatAmount(stats?.totalRevenue || 0), 
-      icon: TrendingUp, 
-      color: "bg-emerald-500/10 text-emerald-500",
-      href: "/dashboard/admin/orders"
-    },
-    { 
       title: "Open Tickets", 
       value: stats?.openTickets || 0, 
       icon: FileText, 
@@ -103,19 +113,71 @@ const AdminDashboard = () => {
   return (
     <div className="p-6 lg:p-8">
       <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center">
-            <ShieldCheck className="h-5 w-5 text-primary" />
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center">
+              <ShieldCheck className="h-5 w-5 text-primary" />
+            </div>
+            <h1 className="text-2xl lg:text-3xl font-bold text-foreground">Admin Dashboard</h1>
           </div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-foreground">Admin Dashboard</h1>
+          <Link to="/dashboard/admin/settings">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="h-10 w-10 bg-secondary rounded-xl flex items-center justify-center hover:bg-accent transition-colors"
+            >
+              <Settings className="h-5 w-5 text-muted-foreground" />
+            </motion.button>
+          </Link>
         </div>
         <p className="text-muted-foreground">
           Manage users, view transactions, and handle support tickets.
         </p>
       </div>
 
+      {/* Revenue Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-br from-green-500/10 to-emerald-500/5 rounded-xl border border-green-500/20 p-5"
+        >
+          <div className="flex items-center gap-2 text-green-600 mb-2">
+            <Calendar className="h-4 w-4" />
+            <span className="text-sm font-medium">Today's Revenue</span>
+          </div>
+          <p className="text-3xl font-bold text-foreground">{formatAmount(stats?.dailyRevenue || 0)}</p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="bg-gradient-to-br from-blue-500/10 to-indigo-500/5 rounded-xl border border-blue-500/20 p-5"
+        >
+          <div className="flex items-center gap-2 text-blue-600 mb-2">
+            <Calendar className="h-4 w-4" />
+            <span className="text-sm font-medium">This Month</span>
+          </div>
+          <p className="text-3xl font-bold text-foreground">{formatAmount(stats?.monthlyRevenue || 0)}</p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl border border-primary/20 p-5"
+        >
+          <div className="flex items-center gap-2 text-primary mb-2">
+            <DollarSign className="h-4 w-4" />
+            <span className="text-sm font-medium">All Time Revenue</span>
+          </div>
+          <p className="text-3xl font-bold text-foreground">{formatAmount(stats?.totalRevenue || 0)}</p>
+        </motion.div>
+      </div>
+
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
         {statCards.map((stat, index) => (
           <Link key={stat.title} to={stat.href}>
             <motion.div
@@ -135,7 +197,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Quick Links */}
-      <div className="grid md:grid-cols-3 gap-4">
+      <div className="grid md:grid-cols-4 gap-4">
         <Link to="/dashboard/admin/users">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -161,7 +223,7 @@ const AdminDashboard = () => {
             <CreditCard className="h-8 w-8 text-primary mb-4" />
             <h3 className="text-lg font-semibold text-foreground mb-2">Manage Orders</h3>
             <p className="text-sm text-muted-foreground">
-              View, update status, and sync all orders.
+              View, update status, and refund orders.
             </p>
           </motion.div>
         </Link>
@@ -177,6 +239,21 @@ const AdminDashboard = () => {
             <h3 className="text-lg font-semibold text-foreground mb-2">Support Tickets</h3>
             <p className="text-sm text-muted-foreground">
               Respond to and manage support requests.
+            </p>
+          </motion.div>
+        </Link>
+
+        <Link to="/dashboard/admin/settings">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.45 }}
+            className="bg-card rounded-xl border border-border p-6 hover:border-primary/50 transition-colors cursor-pointer"
+          >
+            <Settings className="h-8 w-8 text-primary mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">Settings</h3>
+            <p className="text-sm text-muted-foreground">
+              Configure Telegram notifications & revenue.
             </p>
           </motion.div>
         </Link>

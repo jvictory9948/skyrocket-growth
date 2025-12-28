@@ -16,6 +16,7 @@ serve(async (req) => {
     const apiKey = Deno.env.get('REALLYSIMPLESOCIAL_API_KEY');
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
     if (!apiKey) {
       throw new Error('API key not configured');
@@ -50,7 +51,7 @@ serve(async (req) => {
     
     console.log('Authenticated user:', user.id);
 
-    const { service, link, quantity } = await req.json();
+    const { service, link, quantity, serviceName, platform, charge } = await req.json();
 
     console.log(`Placing order: service=${service}, link=${link}, quantity=${quantity}`);
 
@@ -101,6 +102,36 @@ serve(async (req) => {
       else if (apiStatus === 'in progress' || apiStatus === 'processing') orderStatus = 'processing';
       else if (apiStatus === 'partial') orderStatus = 'completed';
       else if (apiStatus === 'pending') orderStatus = 'pending';
+    }
+
+    // Send Telegram notification (fire and forget)
+    try {
+      const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
+      
+      // Get user profile for notification
+      const { data: profile } = await serviceClient
+        .from('profiles')
+        .select('username')
+        .eq('id', user.id)
+        .single();
+
+      // Send notification asynchronously
+      fetch(`${supabaseUrl}/functions/v1/send-telegram-notification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'order',
+          userEmail: user.email,
+          username: profile?.username,
+          amount: charge || 0,
+          service: serviceName || service,
+          platform: platform || 'Unknown',
+          quantity: quantity,
+          link: link,
+        }),
+      }).catch(err => console.log('Telegram notification error (non-blocking):', err));
+    } catch (notifError) {
+      console.log('Telegram notification setup error (non-blocking):', notifError);
     }
 
     return new Response(JSON.stringify({ 
