@@ -176,7 +176,7 @@ const NewOrder = () => {
       if (apiError) throw apiError;
       if (apiResult.error) throw new Error(apiResult.error);
 
-      // Save order to database with status from API
+      // Save order to database with status from API and external order ID
       const { error: orderError } = await supabase.from("orders").insert({
         user_id: user.id,
         platform: selectedPlatform,
@@ -185,6 +185,7 @@ const NewOrder = () => {
         quantity,
         charge: totalPrice,
         status: apiResult.status || "pending",
+        external_order_id: apiResult.orderId?.toString() || null,
       });
 
       if (orderError) throw orderError;
