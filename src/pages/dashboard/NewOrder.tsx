@@ -60,10 +60,28 @@ const NewOrder = () => {
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [allServices, setAllServices] = useState<ApiService[]>([]);
   const [loadingServices, setLoadingServices] = useState(true);
+  const [priceMarkup, setPriceMarkup] = useState(0);
 
   useEffect(() => {
     fetchServices();
+    fetchPriceMarkup();
   }, []);
+
+  const fetchPriceMarkup = async () => {
+    try {
+      const { data } = await supabase
+        .from("admin_settings")
+        .select("setting_value")
+        .eq("setting_key", "price_markup_percentage")
+        .maybeSingle();
+      
+      if (data?.setting_value) {
+        setPriceMarkup(parseFloat(data.setting_value) || 0);
+      }
+    } catch (error) {
+      console.error("Failed to fetch price markup:", error);
+    }
+  };
 
   const fetchServices = async () => {
     setLoadingServices(true);
@@ -112,8 +130,14 @@ const NewOrder = () => {
   const categoryList = Object.keys(groupedCategories);
   const servicesInCategory = selectedCategory ? groupedCategories[selectedCategory] || [] : [];
 
+  // Apply markup to service rate
+  const getMarkedUpRate = (rate: string) => {
+    const baseRate = parseFloat(rate);
+    return baseRate * (1 + priceMarkup / 100);
+  };
+
   const totalPrice = selectedService
-    ? (parseFloat(selectedService.rate) * quantity) / 1000
+    ? (getMarkedUpRate(selectedService.rate) * quantity) / 1000
     : 0;
 
   const minQuantity = selectedService ? parseInt(selectedService.min) : 100;
@@ -371,7 +395,7 @@ const NewOrder = () => {
                 <option value="">Select a service...</option>
                 {servicesInCategory.map((service) => (
                   <option key={service.service} value={service.service}>
-                    {service.name} - ₦{service.rate}/1k (Min: {service.min})
+                    {service.name} - ₦{getMarkedUpRate(service.rate).toFixed(2)}/1k (Min: {service.min})
                   </option>
                 ))}
               </select>
@@ -456,7 +480,7 @@ const NewOrder = () => {
               <div className="bg-secondary/50 rounded-xl p-4 text-sm">
                 <div className="grid grid-cols-2 gap-2 text-muted-foreground">
                   <span>Rate:</span>
-                  <span className="text-foreground">₦{selectedService.rate} per 1000</span>
+                  <span className="text-foreground">₦{getMarkedUpRate(selectedService.rate).toFixed(2)} per 1000</span>
                   <span>Refill:</span>
                   <span className="text-foreground">{selectedService.refill ? "Yes ✓" : "No"}</span>
                   <span>Cancel:</span>
