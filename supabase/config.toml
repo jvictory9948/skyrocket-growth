@@ -4,4 +4,4 @@ project_id = "ymbpwultwtkzdzvcrvul"
 verify_jwt = false
 
 [functions.place-order]
-verify_jwt = true
+verify_jwt = false
