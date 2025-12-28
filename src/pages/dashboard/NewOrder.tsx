@@ -168,6 +168,9 @@ const NewOrder = () => {
       const { data: apiResult, error: apiError } = await supabase.functions.invoke('place-order', {
         body: {
           service: selectedService.service,
+          serviceName: selectedService.name,
+          platform: selectedPlatform,
+          charge: totalPrice,
           link,
           quantity,
         },

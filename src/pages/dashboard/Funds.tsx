@@ -51,6 +51,25 @@ const Funds = () => {
 
       if (error) throw error;
 
+      // Record the transaction
+      await supabase.from("transactions").insert({
+        user_id: user.id,
+        type: "deposit",
+        amount: totalCredit,
+        description: `Deposit of ${formatAmount(effectiveAmount)}${bonus > 0 ? ` with ${bonus}% bonus` : ""}`,
+        status: "completed",
+      });
+
+      // Send Telegram notification
+      supabase.functions.invoke("send-telegram-notification", {
+        body: {
+          type: "deposit",
+          userEmail: user.email,
+          username: profile?.username,
+          amount: totalCredit,
+        },
+      }).catch((err) => console.log("Notification error (non-blocking):", err));
+
       await refreshProfile();
 
       toast({
