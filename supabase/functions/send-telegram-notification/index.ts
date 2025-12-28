@@ -53,6 +53,8 @@ serve(async (req) => {
     const payload: NotificationPayload = await req.json();
     console.log('Sending notification:', payload);
 
+    const formatNaira = (amount: number) => `₦${amount.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
     let message = '';
     if (payload.type === 'order') {
       message = `🛒 *New Order Placed!*\n\n` +
@@ -60,12 +62,12 @@ serve(async (req) => {
         `📦 Service: ${payload.service}\n` +
         `📱 Platform: ${payload.platform}\n` +
         `📊 Quantity: ${payload.quantity?.toLocaleString()}\n` +
-        `💰 Amount: $${payload.amount.toFixed(2)}\n` +
+        `💰 Amount: ${formatNaira(payload.amount)}\n` +
         `🔗 Link: ${payload.link}`;
     } else if (payload.type === 'deposit') {
       message = `💳 *New Deposit!*\n\n` +
         `👤 User: ${payload.username || payload.userEmail || 'Unknown'}\n` +
-        `💰 Amount: $${payload.amount.toFixed(2)}`;
+        `💰 Amount: ${formatNaira(payload.amount)}`;
     }
 
     const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
