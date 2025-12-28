@@ -21,6 +21,7 @@ interface ManualDetails {
   account_name?: string;
   account_number?: string;
   instructions?: string;
+  whatsapp_number?: string;
 }
 
 interface PaymentMethod {
@@ -199,6 +200,21 @@ const AdminPaymentMethods = () => {
                   setManualDetails({ ...manualDetails, account_number: e.target.value })
                 }
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                WhatsApp Number
+              </label>
+              <Input
+                placeholder="e.g., +2348012345678"
+                value={manualDetails.whatsapp_number || ""}
+                onChange={(e) =>
+                  setManualDetails({ ...manualDetails, whatsapp_number: e.target.value })
+                }
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Users will click this to send their payment receipt via WhatsApp.
+              </p>
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
