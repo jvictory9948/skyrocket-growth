@@ -7,7 +7,7 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { socialIcons } from "@/components/icons/SocialIcons";
 import { Button } from "@/components/ui/button";
 
-type OrderStatus = "pending" | "processing" | "completed" | "cancelled";
+type OrderStatus = "pending" | "processing" | "completed" | "cancelled" | "refunded";
 
 interface Order {
   id: string;
@@ -26,6 +26,7 @@ const statusStyles: Record<OrderStatus, string> = {
   processing: "bg-info/10 text-info",
   completed: "bg-success/10 text-success",
   cancelled: "bg-destructive/10 text-destructive",
+  refunded: "bg-purple-500/10 text-purple-500",
 };
 
 const Orders = () => {

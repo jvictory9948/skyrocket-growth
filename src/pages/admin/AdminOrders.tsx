@@ -56,6 +56,7 @@ const AdminOrders = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  const [refunding, setRefunding] = useState<string | null>(null);
 
   // Fetch all orders
   const { data: orders, isLoading, refetch } = useQuery({
@@ -112,6 +113,77 @@ const AdminOrders = () => {
     }
   };
 
+  const refundOrder = async (order: Order) => {
+    if (order.status === 'refunded') {
+      toast({
+        title: "Already refunded",
+        description: "This order has already been refunded.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setRefunding(order.id);
+    try {
+      // Get current user balance
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("balance")
+        .eq("id", order.user_id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      const newBalance = (profile?.balance || 0) + Number(order.charge);
+
+      // Update user balance
+      const { error: balanceError } = await supabase
+        .from("profiles")
+        .update({ balance: newBalance })
+        .eq("id", order.user_id);
+
+      if (balanceError) throw balanceError;
+
+      // Create refund transaction
+      const { error: transactionError } = await supabase
+        .from("transactions")
+        .insert({
+          user_id: order.user_id,
+          type: "refund",
+          amount: Number(order.charge),
+          status: "completed",
+          description: `Refund for order #${order.id.slice(0, 8)}`,
+          reference_id: order.id,
+        });
+
+      if (transactionError) throw transactionError;
+
+      // Update order status to refunded
+      const { error: orderError } = await supabase
+        .from("orders")
+        .update({ status: "refunded" })
+        .eq("id", order.id);
+
+      if (orderError) throw orderError;
+
+      toast({
+        title: "Order refunded",
+        description: `${formatAmount(order.charge)} credited to user's balance.`,
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      setSelectedOrder(null);
+    } catch (error: any) {
+      toast({
+        title: "Refund failed",
+        description: error.message || "Failed to process refund",
+        variant: "destructive",
+      });
+    } finally {
+      setRefunding(null);
+    }
+  };
+
   const syncAllOrders = async () => {
     try {
       const { data, error } = await supabase.functions.invoke('sync-all-orders');
@@ -156,6 +228,8 @@ const AdminOrders = () => {
         return <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20">Processing</Badge>;
       case 'cancelled':
         return <Badge className="bg-destructive/10 text-destructive border-destructive/20">Cancelled</Badge>;
+      case 'refunded':
+        return <Badge className="bg-purple-500/10 text-purple-500 border-purple-500/20">Refunded</Badge>;
       default:
         return <Badge className="bg-secondary text-muted-foreground">{status}</Badge>;
     }
@@ -231,6 +305,7 @@ const AdminOrders = () => {
             <SelectItem value="processing">Processing</SelectItem>
             <SelectItem value="completed">Completed</SelectItem>
             <SelectItem value="cancelled">Cancelled</SelectItem>
+            <SelectItem value="refunded">Refunded</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -400,7 +475,7 @@ const AdminOrders = () => {
                       key={status}
                       variant={selectedOrder.status === status ? "default" : "outline"}
                       size="sm"
-                      disabled={updatingStatus === selectedOrder.id}
+                      disabled={updatingStatus === selectedOrder.id || selectedOrder.status === 'refunded'}
                       onClick={() => updateOrderStatus(selectedOrder.id, status)}
                       className="capitalize"
                     >
@@ -408,6 +483,21 @@ const AdminOrders = () => {
                     </Button>
                   ))}
                 </div>
+              </div>
+
+              <div className="pt-4 border-t border-border">
+                <p className="text-muted-foreground text-sm mb-2">Refund Order</p>
+                <p className="text-xs text-muted-foreground mb-3">
+                  This will credit {formatAmount(selectedOrder.charge)} to the user's balance and mark the order as refunded.
+                </p>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  disabled={refunding === selectedOrder.id || selectedOrder.status === 'refunded'}
+                  onClick={() => refundOrder(selectedOrder)}
+                >
+                  {refunding === selectedOrder.id ? "Processing..." : selectedOrder.status === 'refunded' ? "Already Refunded" : "Process Refund"}
+                </Button>
               </div>
             </div>
           )}
