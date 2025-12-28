@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Footer } from "@/components/Footer";
 import { socialIcons } from "@/components/icons/SocialIcons";
+import { useAuth } from "@/hooks/useAuth";
 
 const platforms = [
   { id: "instagram", name: "Instagram" },
@@ -37,6 +38,8 @@ const features = [
 ];
 
 const Landing = () => {
+  const { user } = useAuth();
+
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
@@ -66,14 +69,24 @@ const Landing = () => {
           </nav>
 
           <div className="flex items-center gap-3">
-            <Link to="/auth">
-              <Button variant="ghost" size="sm">Login</Button>
-            </Link>
-            <Link to="/auth">
-              <Button variant="default" size="sm">
-                Get Started <ArrowRight className="ml-1 h-4 w-4" />
-              </Button>
-            </Link>
+            {user ? (
+              <Link to="/dashboard">
+                <Button variant="default" size="sm">
+                  Dashboard <ArrowRight className="ml-1 h-4 w-4" />
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link to="/auth">
+                  <Button variant="ghost" size="sm">Login</Button>
+                </Link>
+                <Link to="/auth">
+                  <Button variant="default" size="sm">
+                    Get Started <ArrowRight className="ml-1 h-4 w-4" />
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </motion.header>
@@ -132,9 +145,9 @@ const Landing = () => {
               transition={{ duration: 0.6, delay: 0.3 }}
               className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16"
             >
-              <Link to="/auth">
+              <Link to={user ? "/dashboard" : "/auth"}>
                 <Button variant="hero" size="xl">
-                  Start Growing <ArrowRight className="ml-2 h-5 w-5" />
+                  {user ? "Go to Dashboard" : "Start Growing"} <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
               <a href="#features">
@@ -247,9 +260,9 @@ const Landing = () => {
             <p className="text-muted-foreground mb-8">
               Join thousands of creators who trust Epic to boost their social presence.
             </p>
-            <Link to="/auth">
+            <Link to={user ? "/dashboard" : "/auth"}>
               <Button variant="hero" size="xl">
-                Start Your Journey <ArrowRight className="ml-2 h-5 w-5" />
+                {user ? "Go to Dashboard" : "Start Your Journey"} <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
           </motion.div>

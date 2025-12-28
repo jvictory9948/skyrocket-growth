@@ -1,7 +1,20 @@
 import { motion } from "framer-motion";
 import { Heart } from "lucide-react";
 import { Link } from "react-router-dom";
-import { TwitterXIcon, InstagramIcon, DiscordIcon } from "@/components/icons/SocialIcons";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { TwitterXIcon, InstagramIcon, DiscordIcon, TelegramIcon, FacebookIcon, YouTubeIcon, TikTokIcon, LinkedInIcon } from "@/components/icons/SocialIcons";
+
+const platformIcons: Record<string, React.FC<{ className?: string }>> = {
+  twitter: TwitterXIcon,
+  instagram: InstagramIcon,
+  discord: DiscordIcon,
+  telegram: TelegramIcon,
+  facebook: FacebookIcon,
+  youtube: YouTubeIcon,
+  tiktok: TikTokIcon,
+  linkedin: LinkedInIcon,
+};
 
 const links = {
   epic: [
@@ -14,14 +27,22 @@ const links = {
     { name: "Privacy Policy", href: "/privacy" },
     { name: "Refund Policy", href: "/refund" },
   ],
-  social: [
-    { name: "Twitter", href: "https://twitter.com/epicsmm", icon: TwitterXIcon },
-    { name: "Instagram", href: "https://instagram.com/epicsmm", icon: InstagramIcon },
-    { name: "Discord", href: "https://discord.gg/epicsmm", icon: DiscordIcon },
-  ],
 };
 
 export const Footer = () => {
+  const { data: socialLinks } = useQuery({
+    queryKey: ["social-links-public"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("social_links")
+        .select("*")
+        .eq("is_enabled", true)
+        .order("display_order");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   return (
     <footer className="bg-card border-t border-border">
       <div className="container mx-auto px-4 py-12">
@@ -33,11 +54,11 @@ export const Footer = () => {
             viewport={{ once: true }}
             className="col-span-2 md:col-span-1"
           >
-            <a href="#" className="inline-block mb-4">
+            <Link to="/" className="inline-block mb-4">
               <span className="text-2xl font-extrabold text-foreground tracking-tight">
                 E<span className="text-primary">p</span>ic
               </span>
-            </a>
+            </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">
               The most trusted social media growth platform. Boost your presence safely and
               instantly.
@@ -97,16 +118,17 @@ export const Footer = () => {
           >
             <h4 className="text-sm font-semibold text-foreground mb-4">Follow Us</h4>
             <div className="flex gap-3">
-              {links.social.map((link) => {
-                const Icon = link.icon;
+              {socialLinks?.map((link) => {
+                const Icon = platformIcons[link.platform];
+                if (!Icon || !link.url) return null;
                 return (
                   <a
-                    key={link.name}
-                    href={link.href}
+                    key={link.id}
+                    href={link.url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center hover:bg-accent hover:scale-110 transition-all"
-                    aria-label={link.name}
+                    aria-label={link.platform}
                   >
                     <Icon className="h-5 w-5" />
                   </a>

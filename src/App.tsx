@@ -27,6 +27,8 @@ import AdminOrders from "./pages/admin/AdminOrders";
 import AdminTransactions from "./pages/admin/AdminTransactions";
 import AdminTickets from "./pages/admin/AdminTickets";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminSocialLinks from "./pages/admin/AdminSocialLinks";
+import AdminPaymentMethods from "./pages/admin/AdminPaymentMethods";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -62,6 +64,8 @@ const App = () => (
                 <Route path="admin/transactions" element={<AdminTransactions />} />
                 <Route path="admin/tickets" element={<AdminTickets />} />
                 <Route path="admin/settings" element={<AdminSettings />} />
+                <Route path="admin/social-links" element={<AdminSocialLinks />} />
+                <Route path="admin/payment-methods" element={<AdminPaymentMethods />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -1,18 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { CreditCard, Bitcoin, Wallet, Check, Sparkles, Loader2 } from "lucide-react";
+import { CreditCard, Bitcoin, Wallet, Check, Sparkles, Loader2, Banknote, Copy, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrency } from "@/hooks/useCurrency";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 
-const paymentMethods = [
-  { id: "card", name: "Credit Card", icon: CreditCard },
-  { id: "crypto", name: "Crypto", icon: Bitcoin },
-  { id: "paypal", name: "PayPal", icon: Wallet },
-];
+const iconMap: Record<string, React.FC<{ className?: string }>> = {
+  CreditCard,
+  Bitcoin,
+  Wallet,
+  Banknote,
+};
 
 const presetAmounts = [
   { value: 10, bonus: 0 },
@@ -23,21 +25,77 @@ const presetAmounts = [
   { value: 500, bonus: 20 },
 ];
 
+interface ManualDetails {
+  bank_name?: string;
+  account_name?: string;
+  account_number?: string;
+  instructions?: string;
+}
+
+interface PaymentMethod {
+  id: string;
+  method_id: string;
+  name: string;
+  icon: string;
+  is_enabled: boolean;
+  details: ManualDetails;
+}
+
 const Funds = () => {
   const { user, profile, refreshProfile } = useAuth();
   const { formatAmount } = useCurrency();
-  const [selectedMethod, setSelectedMethod] = useState("card");
+  const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const { data: paymentMethods, isLoading: methodsLoading } = useQuery({
+    queryKey: ["payment-methods"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("payment_methods")
+        .select("*")
+        .eq("is_enabled", true)
+        .order("display_order");
+      if (error) throw error;
+      return data as PaymentMethod[];
+    },
+  });
+
+  useEffect(() => {
+    if (paymentMethods && paymentMethods.length > 0 && !selectedMethod) {
+      setSelectedMethod(paymentMethods[0].method_id);
+    }
+  }, [paymentMethods, selectedMethod]);
 
   const effectiveAmount = selectedAmount || Number(customAmount) || 0;
   const selectedPreset = presetAmounts.find((a) => a.value === selectedAmount);
   const bonus = selectedPreset?.bonus || 0;
   const totalCredit = effectiveAmount * (1 + bonus / 100);
 
+  const selectedPaymentMethod = paymentMethods?.find(m => m.method_id === selectedMethod);
+  const manualDetails = selectedPaymentMethod?.method_id === "manual" 
+    ? (selectedPaymentMethod.details as ManualDetails) 
+    : null;
+
+  const copyToClipboard = async (text: string, field: string) => {
+    await navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 2000);
+    toast({ title: "Copied!", description: `${field} copied to clipboard.` });
+  };
+
   const handleAddFunds = async () => {
     if (!user || effectiveAmount <= 0) return;
+
+    if (selectedMethod === "manual") {
+      toast({
+        title: "Manual Transfer",
+        description: "Please complete the bank transfer using the details shown. Your funds will be credited after confirmation.",
+      });
+      return;
+    }
 
     setIsLoading(true);
 
@@ -51,7 +109,6 @@ const Funds = () => {
 
       if (error) throw error;
 
-      // Record the transaction
       await supabase.from("transactions").insert({
         user_id: user.id,
         type: "deposit",
@@ -60,7 +117,6 @@ const Funds = () => {
         status: "completed",
       });
 
-      // Send Telegram notification
       supabase.functions.invoke("send-telegram-notification", {
         body: {
           type: "deposit",
@@ -79,16 +135,25 @@ const Funds = () => {
 
       setSelectedAmount(null);
       setCustomAmount("");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to add funds";
       toast({
         title: "Error",
-        description: error.message || "Failed to add funds",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (methodsLoading) {
+    return (
+      <div className="p-6 lg:p-8 flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 lg:p-8">
@@ -109,15 +174,15 @@ const Funds = () => {
         >
           <h3 className="text-lg font-semibold text-foreground mb-6">Payment Method</h3>
 
-          <div className="flex gap-2 mb-6">
-            {paymentMethods.map((method) => {
-              const Icon = method.icon;
+          <div className="flex flex-wrap gap-2 mb-6">
+            {paymentMethods?.map((method) => {
+              const Icon = iconMap[method.icon] || CreditCard;
               return (
                 <button
                   key={method.id}
-                  onClick={() => setSelectedMethod(method.id)}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-medium transition-all ${
-                    selectedMethod === method.id
+                  onClick={() => setSelectedMethod(method.method_id)}
+                  className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-medium transition-all ${
+                    selectedMethod === method.method_id
                       ? "bg-primary text-primary-foreground"
                       : "bg-secondary text-muted-foreground hover:bg-accent"
                   }`}
@@ -178,6 +243,63 @@ const Funds = () => {
               <p className="text-muted-foreground">
                 You'll be redirected to PayPal to complete your payment.
               </p>
+            </div>
+          )}
+
+          {selectedMethod === "manual" && manualDetails && (
+            <div className="space-y-4">
+              <div className="bg-secondary/50 rounded-xl p-4">
+                <p className="text-sm font-medium text-foreground mb-4">
+                  Transfer to the following account:
+                </p>
+                {manualDetails.bank_name && (
+                  <div className="flex items-center justify-between py-2 border-b border-border">
+                    <span className="text-sm text-muted-foreground">Bank Name</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-foreground">{manualDetails.bank_name}</span>
+                      <button
+                        onClick={() => copyToClipboard(manualDetails.bank_name!, "Bank Name")}
+                        className="text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        {copiedField === "Bank Name" ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {manualDetails.account_name && (
+                  <div className="flex items-center justify-between py-2 border-b border-border">
+                    <span className="text-sm text-muted-foreground">Account Name</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-foreground">{manualDetails.account_name}</span>
+                      <button
+                        onClick={() => copyToClipboard(manualDetails.account_name!, "Account Name")}
+                        className="text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        {copiedField === "Account Name" ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {manualDetails.account_number && (
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-sm text-muted-foreground">Account Number</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-foreground font-mono">{manualDetails.account_number}</span>
+                      <button
+                        onClick={() => copyToClipboard(manualDetails.account_number!, "Account Number")}
+                        className="text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        {copiedField === "Account Number" ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+              {manualDetails.instructions && (
+                <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
+                  <p className="text-sm text-foreground">{manualDetails.instructions}</p>
+                </div>
+              )}
             </div>
           )}
         </motion.div>
@@ -274,6 +396,8 @@ const Funds = () => {
           >
             {isLoading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
+            ) : selectedMethod === "manual" ? (
+              "I've Made the Transfer"
             ) : (
               `Add ${formatAmount(effectiveAmount)} to Balance`
             )}

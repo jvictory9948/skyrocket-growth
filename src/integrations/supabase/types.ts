@@ -109,6 +109,42 @@ export type Database = {
           },
         ]
       }
+      payment_methods: {
+        Row: {
+          created_at: string
+          details: Json | null
+          display_order: number
+          icon: string
+          id: string
+          is_enabled: boolean
+          method_id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          display_order?: number
+          icon: string
+          id?: string
+          is_enabled?: boolean
+          method_id: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          display_order?: number
+          icon?: string
+          id?: string
+          is_enabled?: boolean
+          method_id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -148,6 +184,36 @@ export type Database = {
           status?: Database["public"]["Enums"]["user_status"]
           updated_at?: string
           username?: string | null
+        }
+        Relationships: []
+      }
+      social_links: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          is_enabled: boolean
+          platform: string
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_enabled?: boolean
+          platform: string
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_enabled?: boolean
+          platform?: string
+          updated_at?: string
+          url?: string | null
         }
         Relationships: []
       }
