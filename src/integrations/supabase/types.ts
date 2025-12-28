@@ -39,6 +39,7 @@ export type Database = {
         Row: {
           charge: number
           created_at: string
+          external_order_id: string | null
           id: string
           link: string
           platform: string
@@ -51,6 +52,7 @@ export type Database = {
         Insert: {
           charge: number
           created_at?: string
+          external_order_id?: string | null
           id?: string
           link: string
           platform: string
@@ -63,6 +65,7 @@ export type Database = {
         Update: {
           charge?: number
           created_at?: string
+          external_order_id?: string | null
           id?: string
           link?: string
           platform?: string
