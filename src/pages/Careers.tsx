@@ -21,7 +21,7 @@ const Careers = () => {
         <div className="container mx-auto h-full flex items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-2">
             <span className="text-3xl font-extrabold text-foreground tracking-tight">
-              E<span className="text-primary">p</span>ic
+              E<span className="text-primary">p</span>ik
             </span>
           </Link>
           <Link to="/">
@@ -41,7 +41,7 @@ const Careers = () => {
             className="text-center max-w-3xl mx-auto"
           >
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-              Join the <span className="text-primary">Epic</span> Team
+              Join the <span className="text-primary">Epik</span> Team
             </h1>
             <p className="text-lg text-muted-foreground">
               We're building the future of social media growth. Come help us empower creators worldwide.
@@ -59,7 +59,7 @@ const Careers = () => {
             viewport={{ once: true }}
             className="max-w-4xl mx-auto"
           >
-            <h2 className="text-3xl font-bold text-foreground mb-6 text-center">Why Join Epic?</h2>
+            <h2 className="text-3xl font-bold text-foreground mb-6 text-center">Why Join Epik?</h2>
             <p className="text-muted-foreground text-center mb-10">
               We offer competitive benefits and a culture that values work-life balance.
             </p>

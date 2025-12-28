@@ -57,7 +57,7 @@ const Blog = () => {
         <div className="container mx-auto h-full flex items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-2">
             <span className="text-3xl font-extrabold text-foreground tracking-tight">
-              E<span className="text-primary">p</span>ic
+              E<span className="text-primary">p</span>ik
             </span>
           </Link>
           <Link to="/">
@@ -77,7 +77,7 @@ const Blog = () => {
             className="text-center max-w-3xl mx-auto"
           >
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-              Epic <span className="text-primary">Blog</span>
+              Epik <span className="text-primary">Blog</span>
             </h1>
             <p className="text-lg text-muted-foreground">
               Tips, strategies, and insights to help you grow your social media presence.
