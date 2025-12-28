@@ -56,7 +56,7 @@ export const Footer = () => {
             className="col-span-2 md:col-span-1"
           >
             <Link to="/" className="inline-block mb-4">
-              <img src={epikLogo} alt="Epik" className="h-10 w-auto" />
+              <img src={epikLogo} alt="Epik" className="h-14 w-auto" />
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">
               The most trusted social media growth platform. Boost your presence safely and
