@@ -1,12 +1,11 @@
 import { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { ExternalLink, Loader2, RefreshCw, RotateCcw } from "lucide-react";
+import { ExternalLink, Loader2, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrency } from "@/hooks/useCurrency";
 import { socialIcons } from "@/components/icons/SocialIcons";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
 
 type OrderStatus = "pending" | "processing" | "completed" | "cancelled";
 
@@ -32,57 +31,8 @@ const statusStyles: Record<OrderStatus, string> = {
 const Orders = () => {
   const { user } = useAuth();
   const { formatAmount } = useCurrency();
-  const { toast } = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [syncingOrderId, setSyncingOrderId] = useState<string | null>(null);
-
-  const syncOrderStatus = async (order: Order) => {
-    if (!order.external_order_id) {
-      toast({
-        title: "Cannot sync",
-        description: "This order doesn't have an external ID to sync.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setSyncingOrderId(order.id);
-    try {
-      const { data, error } = await supabase.functions.invoke('sync-order-status', {
-        body: { external_order_id: order.external_order_id },
-      });
-
-      if (error) throw error;
-      if (data.error) throw new Error(data.error);
-
-      // Update the order status in database
-      const { error: updateError } = await supabase
-        .from('orders')
-        .update({ status: data.status })
-        .eq('id', order.id);
-
-      if (updateError) throw updateError;
-
-      // Update local state
-      setOrders(prev => prev.map(o => 
-        o.id === order.id ? { ...o, status: data.status } : o
-      ));
-
-      toast({
-        title: "Status synced",
-        description: `Order status updated to: ${data.status}`,
-      });
-    } catch (error: any) {
-      toast({
-        title: "Sync failed",
-        description: error.message || "Failed to sync order status",
-        variant: "destructive",
-      });
-    } finally {
-      setSyncingOrderId(null);
-    }
-  };
 
   const fetchOrders = useCallback(async () => {
     if (!user) return;
@@ -189,7 +139,6 @@ const Orders = () => {
                     <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Qty</th>
                     <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Charge</th>
                     <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Status</th>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Sync</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -233,18 +182,6 @@ const Orders = () => {
                             {order.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4">
-                          {order.external_order_id && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => syncOrderStatus(order)}
-                              disabled={syncingOrderId === order.id}
-                            >
-                              <RotateCcw className={`h-4 w-4 ${syncingOrderId === order.id ? 'animate-spin' : ''}`} />
-                            </Button>
-                          )}
-                        </td>
                       </motion.tr>
                     );
                   })}
@@ -273,25 +210,13 @@ const Orders = () => {
                           {new Date(order.created_at).toLocaleDateString()}
                         </p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold capitalize ${
-                            statusStyles[order.status]
-                          }`}
-                        >
-                          {order.status}
-                        </span>
-                        {order.external_order_id && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => syncOrderStatus(order)}
-                            disabled={syncingOrderId === order.id}
-                          >
-                            <RotateCcw className={`h-4 w-4 ${syncingOrderId === order.id ? 'animate-spin' : ''}`} />
-                          </Button>
-                        )}
-                      </div>
+                      <span
+                        className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold capitalize ${
+                          statusStyles[order.status]
+                        }`}
+                      >
+                        {order.status}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       {PlatformIcon && <PlatformIcon className="h-4 w-4 text-muted-foreground" />}
