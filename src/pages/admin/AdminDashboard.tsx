@@ -82,14 +82,14 @@ const AdminDashboard = () => {
       value: stats?.totalOrders || 0, 
       icon: CreditCard, 
       color: "bg-blue-500/10 text-blue-500",
-      href: "/dashboard/admin/transactions"
+      href: "/dashboard/admin/orders"
     },
     { 
       title: "Total Revenue", 
       value: formatAmount(stats?.totalRevenue || 0), 
       icon: TrendingUp, 
       color: "bg-emerald-500/10 text-emerald-500",
-      href: "/dashboard/admin/transactions"
+      href: "/dashboard/admin/orders"
     },
     { 
       title: "Open Tickets", 
@@ -151,7 +151,7 @@ const AdminDashboard = () => {
           </motion.div>
         </Link>
 
-        <Link to="/dashboard/admin/transactions">
+        <Link to="/dashboard/admin/orders">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -159,9 +159,9 @@ const AdminDashboard = () => {
             className="bg-card rounded-xl border border-border p-6 hover:border-primary/50 transition-colors cursor-pointer"
           >
             <CreditCard className="h-8 w-8 text-primary mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">View Transactions</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-2">Manage Orders</h3>
             <p className="text-sm text-muted-foreground">
-              See all orders and transaction history.
+              View, update status, and sync all orders.
             </p>
           </motion.div>
         </Link>

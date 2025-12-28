@@ -17,6 +17,7 @@ import Support from "./pages/dashboard/Support";
 import Settings from "./pages/dashboard/Settings";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
+import AdminOrders from "./pages/admin/AdminOrders";
 import AdminTransactions from "./pages/admin/AdminTransactions";
 import AdminTickets from "./pages/admin/AdminTickets";
 import NotFound from "./pages/NotFound";
@@ -44,6 +45,7 @@ const App = () => (
                 <Route path="settings" element={<Settings />} />
                 <Route path="admin" element={<AdminDashboard />} />
                 <Route path="admin/users" element={<AdminUsers />} />
+                <Route path="admin/orders" element={<AdminOrders />} />
                 <Route path="admin/transactions" element={<AdminTransactions />} />
                 <Route path="admin/tickets" element={<AdminTickets />} />
               </Route>
