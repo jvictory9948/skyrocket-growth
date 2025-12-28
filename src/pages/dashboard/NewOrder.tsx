@@ -446,7 +446,8 @@ const NewOrder = () => {
                       type="number"
                       value={quantity}
                       onChange={(e) => {
-                        const val = Number(e.target.value);
+                        const rawValue = e.target.value.replace(/^0+/, '') || '0';
+                        const val = Number(rawValue);
                         if (!isNaN(val)) {
                           setQuantity(Math.min(maxQuantity, val));
                         }
