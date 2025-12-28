@@ -102,7 +102,7 @@ const Landing = () => {
               className="inline-flex items-center gap-2 bg-accent/80 backdrop-blur-sm rounded-full px-4 py-2 mb-8 border border-primary/20"
             >
               <Zap className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium text-foreground">#1 Rated SMM Panel 2024</span>
+              <span className="text-sm font-medium text-foreground">#1 Rated SMM Panel 2025</span>
             </motion.div>
 
             <motion.h1
