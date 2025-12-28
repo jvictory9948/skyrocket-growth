@@ -25,30 +25,42 @@ const AdminDashboard = () => {
   const { data: stats } = useQuery({
     queryKey: ["admin-stats"],
     queryFn: async () => {
-      const [usersRes, ordersRes, ticketsRes] = await Promise.all([
+      const [usersRes, ordersRes, ticketsRes, markupRes] = await Promise.all([
         supabase.from("profiles").select("id, status", { count: "exact" }),
         supabase.from("orders").select("id, charge, created_at", { count: "exact" }),
         supabase.from("support_tickets").select("id, status", { count: "exact" }),
+        supabase.from("admin_settings").select("setting_value").eq("setting_key", "price_markup_percentage").single(),
       ]);
 
       const now = new Date();
       const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
+      // Get markup percentage (default to 20 if not set)
+      const markupPercentage = markupRes.data?.setting_value ? parseFloat(markupRes.data.setting_value) : 20;
+      
+      // Calculate profit from charge: profit = charge * (markup / (100 + markup))
+      // This extracts just the markup portion from the final price
+      const calculateProfit = (charge: number) => {
+        return charge * (markupPercentage / (100 + markupPercentage));
+      };
+
       const totalUsers = usersRes.count || 0;
       const suspendedUsers = usersRes.data?.filter(u => u.status === 'suspended').length || 0;
       const pausedUsers = usersRes.data?.filter(u => u.status === 'paused').length || 0;
       const activeUsers = usersRes.data?.filter(u => u.status === 'active').length || 0;
       const totalOrders = ordersRes.count || 0;
-      const totalRevenue = ordersRes.data?.reduce((sum, o) => sum + Number(o.charge), 0) || 0;
       
-      // Daily revenue
-      const dailyRevenue = ordersRes.data?.filter(o => new Date(o.created_at) >= startOfDay)
-        .reduce((sum, o) => sum + Number(o.charge), 0) || 0;
+      // Calculate profit instead of total revenue
+      const totalProfit = ordersRes.data?.reduce((sum, o) => sum + calculateProfit(Number(o.charge)), 0) || 0;
       
-      // Monthly revenue
-      const monthlyRevenue = ordersRes.data?.filter(o => new Date(o.created_at) >= startOfMonth)
-        .reduce((sum, o) => sum + Number(o.charge), 0) || 0;
+      // Daily profit
+      const dailyProfit = ordersRes.data?.filter(o => new Date(o.created_at) >= startOfDay)
+        .reduce((sum, o) => sum + calculateProfit(Number(o.charge)), 0) || 0;
+      
+      // Monthly profit
+      const monthlyProfit = ordersRes.data?.filter(o => new Date(o.created_at) >= startOfMonth)
+        .reduce((sum, o) => sum + calculateProfit(Number(o.charge)), 0) || 0;
 
       const openTickets = ticketsRes.data?.filter(t => t.status === 'open').length || 0;
 
@@ -58,9 +70,9 @@ const AdminDashboard = () => {
         suspendedUsers,
         pausedUsers,
         totalOrders,
-        totalRevenue,
-        dailyRevenue,
-        monthlyRevenue,
+        totalProfit,
+        dailyProfit,
+        monthlyProfit,
         openTickets,
       };
     },
@@ -136,7 +148,7 @@ const AdminDashboard = () => {
         </p>
       </div>
 
-      {/* Revenue Cards */}
+      {/* Profit Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -145,9 +157,9 @@ const AdminDashboard = () => {
         >
           <div className="flex items-center gap-2 text-green-600 mb-2">
             <Calendar className="h-4 w-4" />
-            <span className="text-sm font-medium">Today's Revenue</span>
+            <span className="text-sm font-medium">Today's Profit</span>
           </div>
-          <p className="text-3xl font-bold text-foreground">{formatAmount(stats?.dailyRevenue || 0)}</p>
+          <p className="text-3xl font-bold text-foreground">{formatAmount(stats?.dailyProfit || 0)}</p>
         </motion.div>
 
         <motion.div
@@ -158,9 +170,9 @@ const AdminDashboard = () => {
         >
           <div className="flex items-center gap-2 text-blue-600 mb-2">
             <Calendar className="h-4 w-4" />
-            <span className="text-sm font-medium">This Month</span>
+            <span className="text-sm font-medium">This Month's Profit</span>
           </div>
-          <p className="text-3xl font-bold text-foreground">{formatAmount(stats?.monthlyRevenue || 0)}</p>
+          <p className="text-3xl font-bold text-foreground">{formatAmount(stats?.monthlyProfit || 0)}</p>
         </motion.div>
 
         <motion.div
@@ -171,9 +183,9 @@ const AdminDashboard = () => {
         >
           <div className="flex items-center gap-2 text-primary mb-2">
             <DollarSign className="h-4 w-4" />
-            <span className="text-sm font-medium">All Time Revenue</span>
+            <span className="text-sm font-medium">All Time Profit</span>
           </div>
-          <p className="text-3xl font-bold text-foreground">{formatAmount(stats?.totalRevenue || 0)}</p>
+          <p className="text-3xl font-bold text-foreground">{formatAmount(stats?.totalProfit || 0)}</p>
         </motion.div>
       </div>
 
