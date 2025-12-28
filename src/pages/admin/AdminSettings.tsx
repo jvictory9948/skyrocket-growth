@@ -10,7 +10,8 @@ import {
   TrendingUp,
   Loader2,
   Save,
-  TestTube
+  TestTube,
+  Percent
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -37,6 +38,7 @@ const AdminSettings = () => {
   const queryClient = useQueryClient();
   const [telegramBotToken, setTelegramBotToken] = useState("");
   const [telegramChatId, setTelegramChatId] = useState("");
+  const [priceMarkup, setPriceMarkup] = useState("0");
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
 
@@ -110,8 +112,10 @@ const AdminSettings = () => {
     if (settings) {
       const botToken = settings.find(s => s.setting_key === "telegram_bot_token")?.setting_value || "";
       const chatId = settings.find(s => s.setting_key === "telegram_chat_id")?.setting_value || "";
+      const markup = settings.find(s => s.setting_key === "price_markup_percentage")?.setting_value || "0";
       setTelegramBotToken(botToken);
       setTelegramChatId(chatId);
+      setPriceMarkup(markup);
     }
   }, [settings]);
 
@@ -121,6 +125,7 @@ const AdminSettings = () => {
       const updates = [
         { setting_key: "telegram_bot_token", setting_value: telegramBotToken },
         { setting_key: "telegram_chat_id", setting_value: telegramChatId },
+        { setting_key: "price_markup_percentage", setting_value: priceMarkup },
       ];
 
       for (const update of updates) {
@@ -134,7 +139,7 @@ const AdminSettings = () => {
 
       toast({
         title: "Settings saved",
-        description: "Telegram settings have been updated.",
+        description: "Settings have been updated.",
       });
       queryClient.invalidateQueries({ queryKey: ["admin-settings"] });
     } catch (error: any) {
@@ -235,10 +240,55 @@ const AdminSettings = () => {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6 max-w-5xl">
+        {/* Price Markup Settings */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-card rounded-xl border border-border p-6"
+        >
+          <div className="flex items-center gap-3 mb-6">
+            <Percent className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold text-foreground">Price Markup</h2>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="priceMarkup">Markup Percentage (%)</Label>
+              <Input
+                id="priceMarkup"
+                type="number"
+                min="0"
+                max="500"
+                step="0.1"
+                placeholder="e.g., 10"
+                value={priceMarkup}
+                onChange={(e) => setPriceMarkup(e.target.value)}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                This percentage will be added to all service prices. Users will only see the final price.
+              </p>
+            </div>
+
+            <div className="bg-secondary/50 rounded-lg p-4">
+              <p className="text-sm text-muted-foreground">
+                <strong>Example:</strong> If a service costs ₦100 and markup is {priceMarkup || 0}%, 
+                users will see <strong>₦{(100 * (1 + (parseFloat(priceMarkup) || 0) / 100)).toFixed(2)}</strong>
+              </p>
+            </div>
+
+            <Button onClick={handleSaveSettings} disabled={isSaving}>
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+              Save Markup
+            </Button>
+          </div>
+        </motion.div>
+
         {/* Telegram Settings */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
           className="bg-card rounded-xl border border-border p-6"
         >
           <div className="flex items-center gap-3 mb-6">
