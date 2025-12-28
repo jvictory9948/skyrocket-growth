@@ -15,7 +15,7 @@ serve(async (req) => {
   try {
     const apiKey = Deno.env.get('REALLYSIMPLESOCIAL_API_KEY');
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     
     if (!apiKey) {
       throw new Error('API key not configured');
@@ -24,19 +24,31 @@ serve(async (req) => {
     // Get auth header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.error('No authorization header found');
       throw new Error('No authorization header');
     }
 
-    // Create Supabase client with user's token
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Create Supabase client with anon key and pass the user's token
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: { Authorization: authHeader },
+      },
+    });
     
-    // Get user from auth header
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    // Get user from the session
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     
-    if (userError || !user) {
+    if (userError) {
+      console.error('Auth error:', userError.message);
+      throw new Error('Unauthorized: ' + userError.message);
+    }
+    
+    if (!user) {
+      console.error('No user found');
       throw new Error('Unauthorized');
     }
+    
+    console.log('Authenticated user:', user.id);
 
     const { service, link, quantity } = await req.json();
 
