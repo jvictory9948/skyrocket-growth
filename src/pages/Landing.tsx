@@ -52,7 +52,7 @@ const Landing = () => {
         <div className="container mx-auto h-full flex items-center justify-between px-4 lg:px-8">
           <a href="/" className="flex items-center gap-2">
             <span className="text-3xl font-extrabold text-foreground tracking-tight">
-              E<span className="text-primary">p</span>icsmm
+              E<span className="text-primary">p</span>iksmm
             </span>
           </a>
 
@@ -217,7 +217,7 @@ const Landing = () => {
             className="text-center mb-16"
           >
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Why Choose Epicsmm?
+              Why Choose Epiksmm?
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
               We've helped thousands of creators grow their audience with our reliable services.
@@ -258,7 +258,7 @@ const Landing = () => {
               Ready to Grow Your Audience?
             </h2>
             <p className="text-muted-foreground mb-8">
-              Join thousands of creators who trust Epicsmm to boost their social presence.
+              Join thousands of creators who trust Epiksmm to boost their social presence.
             </p>
             <Link to={user ? "/dashboard" : "/auth"}>
               <Button variant="hero" size="xl">
