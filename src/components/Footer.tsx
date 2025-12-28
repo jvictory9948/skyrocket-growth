@@ -145,10 +145,8 @@ export const Footer = () => {
           transition={{ delay: 0.4 }}
           className="pt-8 border-t border-border text-center"
         >
-          <p className="text-sm text-muted-foreground flex items-center justify-center gap-1 flex-wrap">
-            © 2025 Epik. Built with
-            <Heart className="h-4 w-4 text-primary fill-primary" />
-            and React.
+          <p className="text-sm text-muted-foreground">
+            © 2025 Epik. All rights reserved.
           </p>
         </motion.div>
       </div>

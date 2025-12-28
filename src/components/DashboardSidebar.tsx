@@ -50,7 +50,7 @@ export const DashboardSidebar = () => {
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-card border-b border-border z-50 flex items-center justify-between px-4">
         <Link to="/dashboard" className="flex items-center gap-2">
-          <img src={epikLogo} alt="Epik" className="h-12 w-auto" />
+          <img src={epikLogo} alt="Epik" className="h-14 w-auto" />
         </Link>
         
         <div className="flex items-center gap-3">
@@ -141,7 +141,7 @@ export const DashboardSidebar = () => {
         {/* Logo */}
         <div className="h-20 flex items-center px-6 border-b border-border">
           <Link to="/dashboard" className="flex items-center gap-2">
-            <img src={epikLogo} alt="Epik" className="h-14 w-auto" />
+            <img src={epikLogo} alt="Epik" className="h-16 w-auto" />
           </Link>
         </div>
 
