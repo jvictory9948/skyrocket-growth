@@ -177,7 +177,14 @@ const NewOrder = () => {
       });
 
       if (apiError) throw apiError;
-      if (apiResult.error) throw new Error(apiResult.error);
+      if (apiResult.error) {
+        toast({
+          title: "Notice",
+          description: apiResult.error,
+        });
+        setIsLoading(false);
+        return;
+      }
 
       // Save order to database with status from API and external order ID
       const { error: orderError } = await supabase.from("orders").insert({
