@@ -443,11 +443,12 @@ const NewOrder = () => {
                   </Button>
                   <div className="flex-1">
                     <Input
-                      type="number"
-                      value={quantity}
+                      type="text"
+                      inputMode="numeric"
+                      value={quantity === 0 ? '' : quantity.toString()}
                       onChange={(e) => {
-                        const rawValue = e.target.value.replace(/^0+/, '') || '0';
-                        const val = Number(rawValue);
+                        const rawValue = e.target.value.replace(/\D/g, '').replace(/^0+/, '');
+                        const val = rawValue === '' ? 0 : Number(rawValue);
                         if (!isNaN(val)) {
                           setQuantity(Math.min(maxQuantity, val));
                         }
