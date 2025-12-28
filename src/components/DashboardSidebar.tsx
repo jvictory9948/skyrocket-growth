@@ -48,7 +48,7 @@ export const DashboardSidebar = () => {
     <>
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-card border-b border-border z-50 flex items-center justify-between px-4">
-        <Link to="/" className="flex items-center gap-2">
+        <Link to="/dashboard" className="flex items-center gap-2">
           <span className="text-2xl font-extrabold text-foreground tracking-tight">
             E<span className="text-primary">p</span>ic
           </span>
@@ -141,7 +141,7 @@ export const DashboardSidebar = () => {
       <aside className="hidden lg:flex fixed top-0 left-0 bottom-0 w-64 bg-card border-r border-border flex-col z-40">
         {/* Logo */}
         <div className="h-20 flex items-center px-6 border-b border-border">
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/dashboard" className="flex items-center gap-2">
             <span className="text-2xl font-extrabold text-foreground tracking-tight">
               E<span className="text-primary">p</span>ic
             </span>

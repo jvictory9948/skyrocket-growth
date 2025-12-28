@@ -4,13 +4,14 @@ import {
   FileText, 
   CreditCard, 
   ShieldCheck,
-  TrendingUp,
   UserX,
   Pause,
   Activity,
   Settings,
   Calendar,
-  DollarSign
+  DollarSign,
+  Share2,
+  Wallet
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -197,7 +198,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Quick Links */}
-      <div className="grid md:grid-cols-4 gap-4">
+      <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-4">
         <Link to="/dashboard/admin/users">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -208,7 +209,7 @@ const AdminDashboard = () => {
             <Users className="h-8 w-8 text-primary mb-4" />
             <h3 className="text-lg font-semibold text-foreground mb-2">Manage Users</h3>
             <p className="text-sm text-muted-foreground">
-              View, suspend, pause, or delete user accounts.
+              View, suspend, or delete user accounts.
             </p>
           </motion.div>
         </Link>
@@ -243,17 +244,47 @@ const AdminDashboard = () => {
           </motion.div>
         </Link>
 
-        <Link to="/dashboard/admin/settings">
+        <Link to="/dashboard/admin/social-links">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.45 }}
             className="bg-card rounded-xl border border-border p-6 hover:border-primary/50 transition-colors cursor-pointer"
           >
+            <Share2 className="h-8 w-8 text-primary mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">Social Links</h3>
+            <p className="text-sm text-muted-foreground">
+              Manage footer social media links.
+            </p>
+          </motion.div>
+        </Link>
+
+        <Link to="/dashboard/admin/payment-methods">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="bg-card rounded-xl border border-border p-6 hover:border-primary/50 transition-colors cursor-pointer"
+          >
+            <Wallet className="h-8 w-8 text-primary mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">Payment Methods</h3>
+            <p className="text-sm text-muted-foreground">
+              Toggle payments & manual transfer.
+            </p>
+          </motion.div>
+        </Link>
+
+        <Link to="/dashboard/admin/settings">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.55 }}
+            className="bg-card rounded-xl border border-border p-6 hover:border-primary/50 transition-colors cursor-pointer"
+          >
             <Settings className="h-8 w-8 text-primary mb-4" />
             <h3 className="text-lg font-semibold text-foreground mb-2">Settings</h3>
             <p className="text-sm text-muted-foreground">
-              Configure Telegram notifications & revenue.
+              Telegram notifications & revenue.
             </p>
           </motion.div>
         </Link>
