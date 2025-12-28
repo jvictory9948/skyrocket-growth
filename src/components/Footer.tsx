@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { TwitterXIcon, InstagramIcon, DiscordIcon, TelegramIcon, FacebookIcon, YouTubeIcon, TikTokIcon, LinkedInIcon } from "@/components/icons/SocialIcons";
+import epikLogo from "@/assets/epik-logo.png";
 
 const platformIcons: Record<string, React.FC<{ className?: string }>> = {
   twitter: TwitterXIcon,
@@ -55,9 +56,7 @@ export const Footer = () => {
             className="col-span-2 md:col-span-1"
           >
             <Link to="/" className="inline-block mb-4">
-              <span className="text-2xl font-extrabold text-foreground tracking-tight">
-                E<span className="text-primary">p</span>ik
-              </span>
+              <img src={epikLogo} alt="Epik" className="h-10 w-auto" />
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">
               The most trusted social media growth platform. Boost your presence safely and
