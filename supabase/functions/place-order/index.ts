@@ -74,9 +74,35 @@ serve(async (req) => {
       throw new Error(result.error);
     }
 
+    // Fetch order status from API to get the actual status
+    const statusFormData = new FormData();
+    statusFormData.append('key', apiKey);
+    statusFormData.append('action', 'status');
+    statusFormData.append('order', result.order.toString());
+
+    const statusResponse = await fetch('https://reallysimplesocial.com/api/v2', {
+      method: 'POST',
+      body: statusFormData,
+    });
+
+    const statusResult = await statusResponse.json();
+    console.log('Order status result:', statusResult);
+
+    // Map API status to our status
+    let orderStatus = 'pending';
+    if (statusResult.status) {
+      const apiStatus = statusResult.status.toLowerCase();
+      if (apiStatus === 'completed') orderStatus = 'completed';
+      else if (apiStatus === 'cancelled' || apiStatus === 'canceled') orderStatus = 'cancelled';
+      else if (apiStatus === 'in progress' || apiStatus === 'processing') orderStatus = 'processing';
+      else if (apiStatus === 'partial') orderStatus = 'completed';
+      else if (apiStatus === 'pending') orderStatus = 'pending';
+    }
+
     return new Response(JSON.stringify({ 
       success: true, 
       orderId: result.order,
+      status: orderStatus,
       message: 'Order placed successfully'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
