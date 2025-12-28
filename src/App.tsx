@@ -11,6 +11,7 @@ import Suspended from "./pages/Suspended";
 import { DashboardLayout } from "./layouts/DashboardLayout";
 import NewOrder from "./pages/dashboard/NewOrder";
 import Orders from "./pages/dashboard/Orders";
+import Transactions from "./pages/dashboard/Transactions";
 import Funds from "./pages/dashboard/Funds";
 import Support from "./pages/dashboard/Support";
 import Settings from "./pages/dashboard/Settings";
@@ -35,8 +36,9 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/suspended" element={<Suspended />} />
               <Route path="/dashboard" element={<DashboardLayout />}>
-                <Route index element={<NewOrder />} />
+              <Route index element={<NewOrder />} />
                 <Route path="orders" element={<Orders />} />
+                <Route path="transactions" element={<Transactions />} />
                 <Route path="funds" element={<Funds />} />
                 <Route path="support" element={<Support />} />
                 <Route path="settings" element={<Settings />} />
