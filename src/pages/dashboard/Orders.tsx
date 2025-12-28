@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { ExternalLink, Loader2 } from "lucide-react";
+import { ExternalLink, Loader2, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrency } from "@/hooks/useCurrency";
 import { socialIcons } from "@/components/icons/SocialIcons";
+import { Button } from "@/components/ui/button";
 
 type OrderStatus = "pending" | "processing" | "completed" | "cancelled";
 
@@ -20,7 +21,7 @@ interface Order {
 }
 
 const statusStyles: Record<OrderStatus, string> = {
-  pending: "bg-accent text-accent-foreground",
+  pending: "bg-accent text-accent-foreground animate-pulse",
   processing: "bg-info/10 text-info",
   completed: "bg-success/10 text-success",
   cancelled: "bg-destructive/10 text-destructive",
@@ -32,23 +33,58 @@ const Orders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const fetchOrders = useCallback(async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (!error && data) {
+      setOrders(data as Order[]);
+    }
+    setLoading(false);
+  }, [user]);
+
   useEffect(() => {
-    const fetchOrders = async () => {
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-
-      if (!error && data) {
-        setOrders(data as Order[]);
-      }
-      setLoading(false);
-    };
-
     fetchOrders();
+  }, [fetchOrders]);
+
+  // Subscribe to realtime order updates
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('orders-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log('Order update received:', payload);
+          
+          if (payload.eventType === 'INSERT') {
+            setOrders(prev => [payload.new as Order, ...prev]);
+          } else if (payload.eventType === 'UPDATE') {
+            setOrders(prev => prev.map(order => 
+              order.id === payload.new.id ? payload.new as Order : order
+            ));
+          } else if (payload.eventType === 'DELETE') {
+            setOrders(prev => prev.filter(order => order.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   if (loading) {
@@ -61,11 +97,22 @@ const Orders = () => {
 
   return (
     <div className="p-6 lg:p-8">
-      <div className="mb-8">
-        <h1 className="text-2xl lg:text-3xl font-bold text-foreground">Order History</h1>
-        <p className="text-muted-foreground mt-1">
-          Track all your orders in one place.
-        </p>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl lg:text-3xl font-bold text-foreground">Order History</h1>
+          <p className="text-muted-foreground mt-1">
+            Track all your orders in real-time.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={fetchOrders}
+          disabled={loading}
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
       </div>
 
       <motion.div

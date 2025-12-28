@@ -12,6 +12,7 @@ import {
   X,
   Plus,
   ShieldCheck,
+  Receipt,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,6 +21,7 @@ import { useCurrency } from "@/hooks/useCurrency";
 const navItems = [
   { name: "New Order", href: "/dashboard", icon: ShoppingCart },
   { name: "Orders", href: "/dashboard/orders", icon: History },
+  { name: "Transactions", href: "/dashboard/transactions", icon: Receipt },
   { name: "Add Funds", href: "/dashboard/funds", icon: Wallet },
   { name: "Support", href: "/dashboard/support", icon: HelpCircle },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
