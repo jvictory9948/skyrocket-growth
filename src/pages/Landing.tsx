@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Footer } from "@/components/Footer";
 import { socialIcons } from "@/components/icons/SocialIcons";
 import { useAuth } from "@/hooks/useAuth";
+import epikLogo from "@/assets/epik-logo.png";
 
 const platforms = [
   { id: "instagram", name: "Instagram" },
@@ -51,9 +52,7 @@ const Landing = () => {
       >
         <div className="container mx-auto h-full flex items-center justify-between px-4 lg:px-8">
           <a href="/" className="flex items-center gap-2">
-            <span className="text-3xl font-extrabold text-foreground tracking-tight">
-              E<span className="text-primary">p</span>ik
-            </span>
+            <img src={epikLogo} alt="Epik" className="h-12 w-auto" />
           </a>
 
           <nav className="hidden md:flex items-center gap-8">
