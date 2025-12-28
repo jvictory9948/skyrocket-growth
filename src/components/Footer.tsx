@@ -17,7 +17,7 @@ const platformIcons: Record<string, React.FC<{ className?: string }>> = {
 };
 
 const links = {
-  epic: [
+  epik: [
     { name: "About Us", href: "/about" },
     { name: "Blog", href: "/blog" },
     { name: "Careers", href: "/careers" },
@@ -56,7 +56,7 @@ export const Footer = () => {
           >
             <Link to="/" className="inline-block mb-4">
               <span className="text-2xl font-extrabold text-foreground tracking-tight">
-                E<span className="text-primary">p</span>ic
+                E<span className="text-primary">p</span>ik
               </span>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">
@@ -72,9 +72,9 @@ export const Footer = () => {
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
           >
-            <h4 className="text-sm font-semibold text-foreground mb-4">Epic</h4>
+            <h4 className="text-sm font-semibold text-foreground mb-4">Epik</h4>
             <ul className="space-y-2">
-              {links.epic.map((link) => (
+              {links.epik.map((link) => (
                 <li key={link.name}>
                   <Link
                     to={link.href}
@@ -147,7 +147,7 @@ export const Footer = () => {
           className="pt-8 border-t border-border text-center"
         >
           <p className="text-sm text-muted-foreground flex items-center justify-center gap-1 flex-wrap">
-            © 2025 Epic. Built with
+            © 2025 Epik. Built with
             <Heart className="h-4 w-4 text-primary fill-primary" />
             and React.
           </p>

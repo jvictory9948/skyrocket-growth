@@ -12,7 +12,7 @@ const Privacy = () => {
         <div className="container mx-auto h-full flex items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-2">
             <span className="text-3xl font-extrabold text-foreground tracking-tight">
-              E<span className="text-primary">p</span>ic
+              E<span className="text-primary">p</span>ik
             </span>
           </Link>
           <Link to="/">
@@ -38,7 +38,7 @@ const Privacy = () => {
               <section>
                 <h2 className="text-2xl font-semibold text-foreground mb-4">Introduction</h2>
                 <p className="text-muted-foreground">
-                  At Epic, we take your privacy seriously. This Privacy Policy explains how we collect, 
+                  At Epik, we take your privacy seriously. This Privacy Policy explains how we collect, 
                   use, disclose, and safeguard your information when you use our service.
                 </p>
               </section>

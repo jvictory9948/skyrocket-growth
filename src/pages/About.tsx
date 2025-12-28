@@ -35,7 +35,7 @@ const About = () => {
         <div className="container mx-auto h-full flex items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-2">
             <span className="text-3xl font-extrabold text-foreground tracking-tight">
-              E<span className="text-primary">p</span>ic
+              E<span className="text-primary">p</span>ik
             </span>
           </Link>
           <Link to="/">
@@ -55,7 +55,7 @@ const About = () => {
             className="text-center max-w-3xl mx-auto"
           >
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-              About <span className="text-primary">Epic</span>
+              About <span className="text-primary">Epik</span>
             </h1>
             <p className="text-lg text-muted-foreground">
               We're on a mission to democratize social media growth, making it accessible 
@@ -77,7 +77,7 @@ const About = () => {
               <h2 className="text-3xl font-bold text-foreground mb-6">Our Story</h2>
               <div className="space-y-4 text-muted-foreground">
                 <p>
-                  Founded in 2020, Epic started with a simple idea: social media growth should be 
+                  Founded in 2020, Epik started with a simple idea: social media growth should be 
                   accessible to everyone, not just those with massive budgets or industry connections.
                 </p>
                 <p>

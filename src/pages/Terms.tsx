@@ -12,7 +12,7 @@ const Terms = () => {
         <div className="container mx-auto h-full flex items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-2">
             <span className="text-3xl font-extrabold text-foreground tracking-tight">
-              E<span className="text-primary">p</span>ic
+              E<span className="text-primary">p</span>ik
             </span>
           </Link>
           <Link to="/">
@@ -38,7 +38,7 @@ const Terms = () => {
               <section>
                 <h2 className="text-2xl font-semibold text-foreground mb-4">1. Acceptance of Terms</h2>
                 <p className="text-muted-foreground">
-                  By accessing and using Epic ("the Service"), you accept and agree to be bound by the terms 
+                  By accessing and using Epik ("the Service"), you accept and agree to be bound by the terms 
                   and provision of this agreement. If you do not agree to abide by the above, please do not 
                   use this service.
                 </p>
@@ -47,7 +47,7 @@ const Terms = () => {
               <section>
                 <h2 className="text-2xl font-semibold text-foreground mb-4">2. Description of Service</h2>
                 <p className="text-muted-foreground">
-                  Epic provides social media marketing services including but not limited to followers, likes, 
+                  Epik provides social media marketing services including but not limited to followers, likes, 
                   views, and engagement for various social media platforms. We act as an intermediary service 
                   connecting users with third-party providers.
                 </p>
@@ -95,7 +95,7 @@ const Terms = () => {
               <section>
                 <h2 className="text-2xl font-semibold text-foreground mb-4">7. Limitation of Liability</h2>
                 <p className="text-muted-foreground">
-                  Epic shall not be liable for any indirect, incidental, special, consequential, or 
+                  Epik shall not be liable for any indirect, incidental, special, consequential, or 
                   punitive damages resulting from your use of or inability to use the service. We are 
                   not responsible for any actions taken by social media platforms against your accounts.
                 </p>

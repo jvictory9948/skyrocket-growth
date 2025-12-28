@@ -93,7 +93,7 @@ const Auth = () => {
           }
         } else {
           toast({
-            title: "Welcome to Epic!",
+            title: "Welcome to Epik!",
             description: "Your account has been created.",
           });
           navigate("/dashboard");
@@ -129,7 +129,7 @@ const Auth = () => {
         <div className="text-center mb-8">
           <a href="/" className="inline-block">
             <span className="text-4xl font-extrabold text-foreground tracking-tight">
-              E<span className="text-primary">p</span>ic
+              E<span className="text-primary">p</span>ik
             </span>
           </a>
           <p className="text-muted-foreground mt-2">

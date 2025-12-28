@@ -12,7 +12,7 @@ const Refund = () => {
         <div className="container mx-auto h-full flex items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-2">
             <span className="text-3xl font-extrabold text-foreground tracking-tight">
-              E<span className="text-primary">p</span>ic
+              E<span className="text-primary">p</span>ik
             </span>
           </Link>
           <Link to="/">
@@ -38,7 +38,7 @@ const Refund = () => {
               <section>
                 <h2 className="text-2xl font-semibold text-foreground mb-4">Overview</h2>
                 <p className="text-muted-foreground">
-                  At Epic, we want you to be completely satisfied with our services. This policy 
+                  At Epik, we want you to be completely satisfied with our services. This policy 
                   outlines the conditions under which refunds may be granted.
                 </p>
               </section>
@@ -109,7 +109,7 @@ const Refund = () => {
               <section>
                 <h2 className="text-2xl font-semibold text-foreground mb-4">How to Request a Refund</h2>
                 <ol className="list-decimal list-inside text-muted-foreground space-y-2">
-                  <li>Log into your Epic account</li>
+                  <li>Log into your Epik account</li>
                   <li>Navigate to the Support section</li>
                   <li>Open a new ticket with subject "Refund Request"</li>
                   <li>Provide your order ID and reason for refund</li>
@@ -121,7 +121,7 @@ const Refund = () => {
               <section>
                 <h2 className="text-2xl font-semibold text-foreground mb-4">Account Balance</h2>
                 <p className="text-muted-foreground">
-                  Funds added to your Epic account balance are generally non-refundable. We 
+                  Funds added to your Epik account balance are generally non-refundable. We 
                   encourage users to add only the amount they intend to use. In exceptional 
                   circumstances, balance refunds may be considered at our discretion.
                 </p>
