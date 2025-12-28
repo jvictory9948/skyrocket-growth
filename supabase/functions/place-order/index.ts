@@ -72,9 +72,9 @@ serve(async (req) => {
     console.log('Order result:', result);
 
     if (result.error) {
-      // Return 400 for API business logic errors (not 500)
-      return new Response(JSON.stringify({ error: result.error }), {
-        status: 400,
+      // Return 200 with error so frontend can show friendly message
+      return new Response(JSON.stringify({ success: false, error: result.error }), {
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
