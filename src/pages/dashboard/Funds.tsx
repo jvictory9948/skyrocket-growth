@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { CreditCard, Bitcoin, Wallet, Check, Sparkles, Loader2, Banknote, Copy, CheckCircle } from "lucide-react";
+import { CreditCard, Bitcoin, Wallet, Loader2, Banknote, Copy, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,14 +16,6 @@ const iconMap: Record<string, React.FC<{ className?: string }>> = {
   Banknote,
 };
 
-const presetAmounts = [
-  { value: 10, bonus: 0 },
-  { value: 25, bonus: 3 },
-  { value: 50, bonus: 5 },
-  { value: 100, bonus: 10 },
-  { value: 250, bonus: 15 },
-  { value: 500, bonus: 20 },
-];
 
 interface ManualDetails {
   bank_name?: string;
@@ -45,7 +37,6 @@ const Funds = () => {
   const { user, profile, refreshProfile } = useAuth();
   const { formatAmount } = useCurrency();
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
-  const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -69,10 +60,7 @@ const Funds = () => {
     }
   }, [paymentMethods, selectedMethod]);
 
-  const effectiveAmount = selectedAmount || Number(customAmount) || 0;
-  const selectedPreset = presetAmounts.find((a) => a.value === selectedAmount);
-  const bonus = selectedPreset?.bonus || 0;
-  const totalCredit = effectiveAmount * (1 + bonus / 100);
+  const effectiveAmount = Number(customAmount) || 0;
 
   const selectedPaymentMethod = paymentMethods?.find(m => m.method_id === selectedMethod);
   const manualDetails = selectedPaymentMethod?.method_id === "manual" 
@@ -100,7 +88,7 @@ const Funds = () => {
     setIsLoading(true);
 
     try {
-      const newBalance = (profile?.balance || 0) + totalCredit;
+      const newBalance = (profile?.balance || 0) + effectiveAmount;
       
       const { error } = await supabase
         .from("profiles")
@@ -112,8 +100,8 @@ const Funds = () => {
       await supabase.from("transactions").insert({
         user_id: user.id,
         type: "deposit",
-        amount: totalCredit,
-        description: `Deposit of ${formatAmount(effectiveAmount)}${bonus > 0 ? ` with ${bonus}% bonus` : ""}`,
+        amount: effectiveAmount,
+        description: `Deposit of ${formatAmount(effectiveAmount)}`,
         status: "completed",
       });
 
@@ -122,7 +110,7 @@ const Funds = () => {
           type: "deposit",
           userEmail: user.email,
           username: profile?.username,
-          amount: totalCredit,
+          amount: effectiveAmount,
         },
       }).catch((err) => console.log("Notification error (non-blocking):", err));
 
@@ -130,10 +118,9 @@ const Funds = () => {
 
       toast({
         title: "Funds added!",
-        description: `${formatAmount(totalCredit)} has been added to your balance.`,
+        description: `${formatAmount(effectiveAmount)} has been added to your balance.`,
       });
 
-      setSelectedAmount(null);
       setCustomAmount("");
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Failed to add funds";
@@ -304,85 +291,34 @@ const Funds = () => {
           )}
         </motion.div>
 
-        {/* Amount Selection */}
+        {/* Amount Entry */}
         <motion.div
           initial={{ opacity: 0, x: 30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
           className="bg-card rounded-2xl shadow-soft border border-border p-6"
         >
-          <h3 className="text-lg font-semibold text-foreground mb-6">Select Amount</h3>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-            {presetAmounts.map((amount) => (
-              <motion.button
-                key={amount.value}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => {
-                  setSelectedAmount(amount.value);
-                  setCustomAmount("");
-                }}
-                className={`relative p-4 rounded-xl border-2 transition-all ${
-                  selectedAmount === amount.value
-                    ? "border-primary bg-primary/5"
-                    : "border-border hover:border-primary/50"
-                }`}
-              >
-                {selectedAmount === amount.value && (
-                  <div className="absolute top-2 right-2">
-                    <Check className="h-4 w-4 text-primary" />
-                  </div>
-                )}
-                <div className="text-2xl font-bold text-foreground">
-                  {formatAmount(amount.value)}
-                </div>
-                {amount.bonus > 0 && (
-                  <div className="flex items-center justify-center gap-1 mt-2 text-xs font-semibold text-primary">
-                    <Sparkles className="h-3 w-3" />
-                    +{amount.bonus}% Bonus
-                  </div>
-                )}
-              </motion.button>
-            ))}
-          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-6">Enter Amount</h3>
 
           <div className="mb-6">
             <label className="block text-sm font-medium text-foreground mb-2">
-              Or enter custom amount (USD)
+              Amount (USD)
             </label>
             <Input
               type="number"
               placeholder="Enter amount..."
               value={customAmount}
-              onChange={(e) => {
-                setCustomAmount(e.target.value);
-                setSelectedAmount(null);
-              }}
+              onChange={(e) => setCustomAmount(e.target.value)}
               className="h-12 bg-secondary border-border focus:ring-2 focus:ring-primary"
             />
           </div>
 
           {/* Summary */}
           <div className="bg-secondary/50 rounded-xl p-4 mb-6">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm text-muted-foreground">Amount</span>
-              <span className="text-sm font-medium text-foreground">
-                {formatAmount(effectiveAmount)}
-              </span>
-            </div>
-            {bonus > 0 && (
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-muted-foreground">Bonus ({bonus}%)</span>
-                <span className="text-sm font-medium text-primary">
-                  +{formatAmount((effectiveAmount * bonus) / 100)}
-                </span>
-              </div>
-            )}
-            <div className="flex justify-between items-center pt-2 border-t border-border">
-              <span className="text-sm font-semibold text-foreground">Total Credit</span>
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-semibold text-foreground">Amount</span>
               <span className="text-lg font-bold text-foreground">
-                {formatAmount(totalCredit)}
+                {formatAmount(effectiveAmount)}
               </span>
             </div>
           </div>
