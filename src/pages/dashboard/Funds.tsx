@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { CreditCard, Bitcoin, Wallet, Loader2, Banknote, Copy, CheckCircle } from "lucide-react";
+import { CreditCard, Bitcoin, Wallet, Loader2, Banknote, Copy, CheckCircle, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
@@ -22,6 +22,7 @@ interface ManualDetails {
   account_name?: string;
   account_number?: string;
   instructions?: string;
+  whatsapp_number?: string;
 }
 
 interface PaymentMethod {
@@ -287,58 +288,68 @@ const Funds = () => {
                   <p className="text-sm text-foreground">{manualDetails.instructions}</p>
                 </div>
               )}
+              {manualDetails.whatsapp_number && (
+                <Button
+                  variant="outline"
+                  className="w-full gap-2 bg-green-500/10 border-green-500/30 text-green-600 hover:bg-green-500/20 hover:text-green-700"
+                  onClick={() => window.open(`https://wa.me/${manualDetails.whatsapp_number?.replace(/\D/g, '')}?text=Hi, I just made a transfer and would like to send my receipt.`, '_blank')}
+                >
+                  <MessageCircle className="h-5 w-5" />
+                  Send Receipt via WhatsApp
+                </Button>
+              )}
             </div>
           )}
         </motion.div>
 
-        {/* Amount Entry */}
-        <motion.div
-          initial={{ opacity: 0, x: 30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-card rounded-2xl shadow-soft border border-border p-6"
-        >
-          <h3 className="text-lg font-semibold text-foreground mb-6">Enter Amount</h3>
-
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Amount (USD)
-            </label>
-            <Input
-              type="number"
-              placeholder="Enter amount..."
-              value={customAmount}
-              onChange={(e) => setCustomAmount(e.target.value)}
-              className="h-12 bg-secondary border-border focus:ring-2 focus:ring-primary"
-            />
-          </div>
-
-          {/* Summary */}
-          <div className="bg-secondary/50 rounded-xl p-4 mb-6">
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-semibold text-foreground">Amount</span>
-              <span className="text-lg font-bold text-foreground">
-                {formatAmount(effectiveAmount)}
-              </span>
-            </div>
-          </div>
-
-          <Button
-            variant="hero"
-            size="lg"
-            className="w-full"
-            disabled={effectiveAmount <= 0 || isLoading}
-            onClick={handleAddFunds}
+        {/* Amount Entry - Only show for non-manual methods */}
+        {selectedMethod !== "manual" && (
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+            className="bg-card rounded-2xl shadow-soft border border-border p-6"
           >
-            {isLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : selectedMethod === "manual" ? (
-              "I've Made the Transfer"
-            ) : (
-              `Add ${formatAmount(effectiveAmount)} to Balance`
-            )}
-          </Button>
-        </motion.div>
+            <h3 className="text-lg font-semibold text-foreground mb-6">Enter Amount</h3>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Amount (USD)
+              </label>
+              <Input
+                type="number"
+                placeholder="Enter amount..."
+                value={customAmount}
+                onChange={(e) => setCustomAmount(e.target.value)}
+                className="h-12 bg-secondary border-border focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            {/* Summary */}
+            <div className="bg-secondary/50 rounded-xl p-4 mb-6">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-semibold text-foreground">Amount</span>
+                <span className="text-lg font-bold text-foreground">
+                  {formatAmount(effectiveAmount)}
+                </span>
+              </div>
+            </div>
+
+            <Button
+              variant="hero"
+              size="lg"
+              className="w-full"
+              disabled={effectiveAmount <= 0 || isLoading}
+              onClick={handleAddFunds}
+            >
+              {isLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                `Add ${formatAmount(effectiveAmount)} to Balance`
+              )}
+            </Button>
+          </motion.div>
+        )}
       </div>
     </div>
   );
