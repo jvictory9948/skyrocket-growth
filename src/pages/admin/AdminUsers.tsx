@@ -106,7 +106,7 @@ const AdminUsers = () => {
 
   // Add funds mutation
   const addFundsMutation = useMutation({
-    mutationFn: async ({ userId, amount, currentBalance }: { userId: string; amount: number; currentBalance: number }) => {
+    mutationFn: async ({ userId, amount, currentBalance, username }: { userId: string; amount: number; currentBalance: number; username: string | null }) => {
       const newBalance = currentBalance + amount;
       const { error } = await supabase
         .from("profiles")
@@ -114,6 +114,20 @@ const AdminUsers = () => {
         .eq("id", userId);
       
       if (error) throw error;
+
+      // Create a transaction record
+      const { error: txError } = await supabase
+        .from("transactions")
+        .insert({
+          user_id: userId,
+          type: "deposit",
+          amount: amount,
+          description: "Account funded by admin",
+          status: "completed",
+        });
+      
+      if (txError) throw txError;
+
       return { newBalance };
     },
     onSuccess: (data) => {
@@ -182,6 +196,7 @@ const AdminUsers = () => {
         userId: addFundsUser.id,
         amount,
         currentBalance: addFundsUser.balance,
+        username: addFundsUser.username,
       });
     }
   };
