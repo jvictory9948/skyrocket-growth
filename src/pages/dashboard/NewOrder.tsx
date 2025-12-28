@@ -447,7 +447,14 @@ const NewOrder = () => {
                       value={quantity}
                       onChange={(e) => {
                         const val = Number(e.target.value);
-                        setQuantity(Math.max(minQuantity, Math.min(maxQuantity, val)));
+                        if (!isNaN(val)) {
+                          setQuantity(Math.min(maxQuantity, val));
+                        }
+                      }}
+                      onBlur={() => {
+                        if (quantity < minQuantity) {
+                          setQuantity(minQuantity);
+                        }
                       }}
                       className="text-center text-2xl font-bold h-14 bg-secondary border-border"
                     />
