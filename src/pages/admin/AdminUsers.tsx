@@ -550,11 +550,6 @@ const AdminUsers = () => {
                   New balance will be: {formatAmount((addFundsUser?.balance || 0) + parsedAmount)}
                 </p>
               )}
-              {isLargeDeposit && (
-                <p className="text-sm text-amber-500 mt-2">
-                  ⚠️ Deposits above ₦5,000 require Telegram confirmation.
-                </p>
-              )}
             </div>
           )}
 
