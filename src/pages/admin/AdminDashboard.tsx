@@ -11,7 +11,8 @@ import {
   Calendar,
   DollarSign,
   Share2,
-  Wallet
+  Wallet,
+  RefreshCcw
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -25,11 +26,12 @@ const AdminDashboard = () => {
   const { data: stats } = useQuery({
     queryKey: ["admin-stats"],
     queryFn: async () => {
-      const [usersRes, ordersRes, ticketsRes, markupRes] = await Promise.all([
+      const [usersRes, ordersRes, ticketsRes, markupRes, refundsRes] = await Promise.all([
         supabase.from("profiles").select("id, status", { count: "exact" }),
         supabase.from("orders").select("id, charge, created_at", { count: "exact" }),
         supabase.from("support_tickets").select("id, status", { count: "exact" }),
         supabase.from("admin_settings").select("setting_value").eq("setting_key", "price_markup_percentage").single(),
+        supabase.from("refund_requests").select("id, status", { count: "exact" }),
       ]);
 
       const now = new Date();
@@ -63,6 +65,7 @@ const AdminDashboard = () => {
         .reduce((sum, o) => sum + calculateProfit(Number(o.charge)), 0) || 0;
 
       const openTickets = ticketsRes.data?.filter(t => t.status === 'open').length || 0;
+      const pendingRefunds = refundsRes.data?.filter(r => r.status === 'pending').length || 0;
 
       return {
         totalUsers,
@@ -74,6 +77,7 @@ const AdminDashboard = () => {
         dailyProfit,
         monthlyProfit,
         openTickets,
+        pendingRefunds,
       };
     },
   });
@@ -120,6 +124,13 @@ const AdminDashboard = () => {
       icon: FileText, 
       color: "bg-orange-500/10 text-orange-500",
       href: "/dashboard/admin/tickets"
+    },
+    { 
+      title: "Pending Refunds", 
+      value: stats?.pendingRefunds || 0, 
+      icon: RefreshCcw, 
+      color: "bg-purple-500/10 text-purple-500",
+      href: "/dashboard/admin/refunds"
     },
   ];
 
@@ -286,11 +297,26 @@ const AdminDashboard = () => {
           </motion.div>
         </Link>
 
-        <Link to="/dashboard/admin/settings">
+        <Link to="/dashboard/admin/refunds">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.55 }}
+            className="bg-card rounded-xl border border-border p-6 hover:border-primary/50 transition-colors cursor-pointer"
+          >
+            <RefreshCcw className="h-8 w-8 text-primary mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">Refund Requests</h3>
+            <p className="text-sm text-muted-foreground">
+              Review and approve refunds.
+            </p>
+          </motion.div>
+        </Link>
+
+        <Link to="/dashboard/admin/settings">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
             className="bg-card rounded-xl border border-border p-6 hover:border-primary/50 transition-colors cursor-pointer"
           >
             <Settings className="h-8 w-8 text-primary mb-4" />
