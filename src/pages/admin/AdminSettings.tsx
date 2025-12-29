@@ -11,10 +11,12 @@ import {
   Loader2,
   Save,
   TestTube,
-  Percent
+  Percent,
+  UserPlus,
+  Shield
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,15 +34,30 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const AdminSettings = () => {
   const { formatAmount } = useCurrency();
   const queryClient = useQueryClient();
+  
+  // Main notifications
   const [telegramBotToken, setTelegramBotToken] = useState("");
   const [telegramChatId, setTelegramChatId] = useState("");
+  
+  // Signup notifications
+  const [signupBotToken, setSignupBotToken] = useState("");
+  const [signupChatId, setSignupChatId] = useState("");
+  
+  // Admin action notifications
+  const [adminActionBotToken, setAdminActionBotToken] = useState("");
+  const [adminActionChatId, setAdminActionChatId] = useState("");
+  
+  // Other settings
   const [priceMarkup, setPriceMarkup] = useState("0");
+  const [turnstileSiteKey, setTurnstileSiteKey] = useState("");
+  
   const [isSaving, setIsSaving] = useState(false);
-  const [isTesting, setIsTesting] = useState(false);
+  const [isTesting, setIsTesting] = useState<string | null>(null);
 
   // Fetch settings
   const { data: settings, isLoading: settingsLoading } = useQuery({
@@ -110,12 +127,14 @@ const AdminSettings = () => {
   // Set initial values
   useEffect(() => {
     if (settings) {
-      const botToken = settings.find(s => s.setting_key === "telegram_bot_token")?.setting_value || "";
-      const chatId = settings.find(s => s.setting_key === "telegram_chat_id")?.setting_value || "";
-      const markup = settings.find(s => s.setting_key === "price_markup_percentage")?.setting_value || "0";
-      setTelegramBotToken(botToken);
-      setTelegramChatId(chatId);
-      setPriceMarkup(markup);
+      setTelegramBotToken(settings.find(s => s.setting_key === "telegram_bot_token")?.setting_value || "");
+      setTelegramChatId(settings.find(s => s.setting_key === "telegram_chat_id")?.setting_value || "");
+      setSignupBotToken(settings.find(s => s.setting_key === "telegram_signup_bot_token")?.setting_value || "");
+      setSignupChatId(settings.find(s => s.setting_key === "telegram_signup_chat_id")?.setting_value || "");
+      setAdminActionBotToken(settings.find(s => s.setting_key === "telegram_admin_action_bot_token")?.setting_value || "");
+      setAdminActionChatId(settings.find(s => s.setting_key === "telegram_admin_action_chat_id")?.setting_value || "");
+      setPriceMarkup(settings.find(s => s.setting_key === "price_markup_percentage")?.setting_value || "0");
+      setTurnstileSiteKey(settings.find(s => s.setting_key === "turnstile_site_key")?.setting_value || "");
     }
   }, [settings]);
 
@@ -125,7 +144,12 @@ const AdminSettings = () => {
       const updates = [
         { setting_key: "telegram_bot_token", setting_value: telegramBotToken },
         { setting_key: "telegram_chat_id", setting_value: telegramChatId },
+        { setting_key: "telegram_signup_bot_token", setting_value: signupBotToken },
+        { setting_key: "telegram_signup_chat_id", setting_value: signupChatId },
+        { setting_key: "telegram_admin_action_bot_token", setting_value: adminActionBotToken },
+        { setting_key: "telegram_admin_action_chat_id", setting_value: adminActionChatId },
         { setting_key: "price_markup_percentage", setting_value: priceMarkup },
+        { setting_key: "turnstile_site_key", setting_value: turnstileSiteKey },
       ];
 
       for (const update of updates) {
@@ -139,7 +163,7 @@ const AdminSettings = () => {
 
       toast({
         title: "Settings saved",
-        description: "Settings have been updated.",
+        description: "All settings have been updated.",
       });
       queryClient.invalidateQueries({ queryKey: ["admin-settings"] });
     } catch (error: any) {
@@ -153,8 +177,20 @@ const AdminSettings = () => {
     }
   };
 
-  const handleTestTelegram = async () => {
-    if (!telegramBotToken || !telegramChatId) {
+  const handleTestTelegram = async (type: 'main' | 'signup' | 'admin_action') => {
+    let botToken, chatId;
+    if (type === 'main') {
+      botToken = telegramBotToken;
+      chatId = telegramChatId;
+    } else if (type === 'signup') {
+      botToken = signupBotToken;
+      chatId = signupChatId;
+    } else {
+      botToken = adminActionBotToken;
+      chatId = adminActionChatId;
+    }
+
+    if (!botToken || !chatId) {
       toast({
         title: "Missing configuration",
         description: "Please enter both bot token and chat ID first.",
@@ -163,14 +199,16 @@ const AdminSettings = () => {
       return;
     }
 
-    setIsTesting(true);
+    setIsTesting(type);
     try {
-      const { data, error } = await supabase.functions.invoke("send-telegram-notification", {
-        body: {
-          type: "deposit",
-          username: "Test User",
-          amount: 100.00,
-        },
+      const payload = type === 'signup' 
+        ? { type: "signup", username: "Test User", userEmail: "test@example.com" }
+        : type === 'admin_action'
+        ? { type: "admin_action", action: "Test Action", adminEmail: "admin@example.com", details: "This is a test notification" }
+        : { type: "deposit", username: "Test User", amount: 100.00 };
+
+      const { error } = await supabase.functions.invoke("send-telegram-notification", {
+        body: payload,
       });
 
       if (error) throw error;
@@ -186,7 +224,7 @@ const AdminSettings = () => {
         variant: "destructive",
       });
     } finally {
-      setIsTesting(false);
+      setIsTesting(null);
     }
   };
 
@@ -234,12 +272,12 @@ const AdminSettings = () => {
           </div>
           <div>
             <h1 className="text-2xl lg:text-3xl font-bold text-foreground">Admin Settings</h1>
-            <p className="text-muted-foreground">Configure notifications and manage revenue tracking.</p>
+            <p className="text-muted-foreground">Configure notifications, security, and manage revenue tracking.</p>
           </div>
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6 max-w-5xl">
+      <div className="grid lg:grid-cols-2 gap-6 max-w-6xl">
         {/* Price Markup Settings */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -266,7 +304,7 @@ const AdminSettings = () => {
                 className="mt-1"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                This percentage will be added to all service prices. Users will only see the final price.
+                This percentage will be added to all service prices.
               </p>
             </div>
 
@@ -276,66 +314,177 @@ const AdminSettings = () => {
                 users will see <strong>₦{(100 * (1 + (parseFloat(priceMarkup) || 0) / 100)).toFixed(2)}</strong>
               </p>
             </div>
-
-            <Button onClick={handleSaveSettings} disabled={isSaving}>
-              {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-              Save Markup
-            </Button>
           </div>
         </motion.div>
 
-        {/* Telegram Settings */}
+        {/* Turnstile Captcha Settings */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="bg-card rounded-xl border border-border p-6"
+        >
+          <div className="flex items-center gap-3 mb-6">
+            <Shield className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold text-foreground">Captcha Protection</h2>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="turnstileSiteKey">Cloudflare Turnstile Site Key</Label>
+              <Input
+                id="turnstileSiteKey"
+                placeholder="Enter your Turnstile site key"
+                value={turnstileSiteKey}
+                onChange={(e) => setTurnstileSiteKey(e.target.value)}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Get this from Cloudflare dashboard → Turnstile. Leave empty to disable captcha.
+              </p>
+            </div>
+
+            <div className="bg-secondary/50 rounded-lg p-4">
+              <p className="text-sm text-muted-foreground">
+                Turnstile protects your signup form from bots without annoying puzzles.
+              </p>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Telegram Notifications */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-card rounded-xl border border-border p-6"
+          className="bg-card rounded-xl border border-border p-6 lg:col-span-2"
         >
           <div className="flex items-center gap-3 mb-6">
             <Send className="h-5 w-5 text-primary" />
             <h2 className="text-lg font-semibold text-foreground">Telegram Notifications</h2>
           </div>
 
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="botToken">Bot Token</Label>
-              <Input
-                id="botToken"
-                type="password"
-                placeholder="Enter your Telegram bot token"
-                value={telegramBotToken}
-                onChange={(e) => setTelegramBotToken(e.target.value)}
-                className="mt-1"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Get this from @BotFather on Telegram
-              </p>
-            </div>
+          <Tabs defaultValue="main" className="w-full">
+            <TabsList className="grid w-full grid-cols-3 mb-4">
+              <TabsTrigger value="main" className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                Orders & Deposits
+              </TabsTrigger>
+              <TabsTrigger value="signup" className="flex items-center gap-2">
+                <UserPlus className="h-4 w-4" />
+                User Signups
+              </TabsTrigger>
+              <TabsTrigger value="admin" className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                Admin Actions
+              </TabsTrigger>
+            </TabsList>
 
-            <div>
-              <Label htmlFor="chatId">Chat ID</Label>
-              <Input
-                id="chatId"
-                placeholder="Enter your chat or group ID"
-                value={telegramChatId}
-                onChange={(e) => setTelegramChatId(e.target.value)}
-                className="mt-1"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Your personal chat ID or group ID for notifications
+            <TabsContent value="main" className="space-y-4">
+              <p className="text-sm text-muted-foreground mb-4">
+                Receive notifications when users place orders or make deposits.
               </p>
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <Button onClick={handleSaveSettings} disabled={isSaving}>
-                {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                Save Settings
-              </Button>
-              <Button variant="outline" onClick={handleTestTelegram} disabled={isTesting}>
-                {isTesting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <TestTube className="h-4 w-4 mr-2" />}
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="botToken">Bot Token</Label>
+                  <Input
+                    id="botToken"
+                    type="password"
+                    placeholder="Enter your Telegram bot token"
+                    value={telegramBotToken}
+                    onChange={(e) => setTelegramBotToken(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="chatId">Chat ID</Label>
+                  <Input
+                    id="chatId"
+                    placeholder="Enter your chat or group ID"
+                    value={telegramChatId}
+                    onChange={(e) => setTelegramChatId(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+              <Button variant="outline" onClick={() => handleTestTelegram('main')} disabled={isTesting === 'main'}>
+                {isTesting === 'main' ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <TestTube className="h-4 w-4 mr-2" />}
                 Test
               </Button>
-            </div>
+            </TabsContent>
+
+            <TabsContent value="signup" className="space-y-4">
+              <p className="text-sm text-muted-foreground mb-4">
+                Receive notifications when new users sign up.
+              </p>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="signupBotToken">Bot Token</Label>
+                  <Input
+                    id="signupBotToken"
+                    type="password"
+                    placeholder="Enter your Telegram bot token"
+                    value={signupBotToken}
+                    onChange={(e) => setSignupBotToken(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="signupChatId">Chat ID</Label>
+                  <Input
+                    id="signupChatId"
+                    placeholder="Enter your chat or group ID"
+                    value={signupChatId}
+                    onChange={(e) => setSignupChatId(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+              <Button variant="outline" onClick={() => handleTestTelegram('signup')} disabled={isTesting === 'signup'}>
+                {isTesting === 'signup' ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <TestTube className="h-4 w-4 mr-2" />}
+                Test
+              </Button>
+            </TabsContent>
+
+            <TabsContent value="admin" className="space-y-4">
+              <p className="text-sm text-muted-foreground mb-4">
+                Receive notifications for admin actions like refunds, deposits, and balance changes.
+              </p>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="adminActionBotToken">Bot Token</Label>
+                  <Input
+                    id="adminActionBotToken"
+                    type="password"
+                    placeholder="Enter your Telegram bot token"
+                    value={adminActionBotToken}
+                    onChange={(e) => setAdminActionBotToken(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="adminActionChatId">Chat ID</Label>
+                  <Input
+                    id="adminActionChatId"
+                    placeholder="Enter your chat or group ID"
+                    value={adminActionChatId}
+                    onChange={(e) => setAdminActionChatId(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+              <Button variant="outline" onClick={() => handleTestTelegram('admin_action')} disabled={isTesting === 'admin_action'}>
+                {isTesting === 'admin_action' ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <TestTube className="h-4 w-4 mr-2" />}
+                Test
+              </Button>
+            </TabsContent>
+          </Tabs>
+
+          <div className="flex gap-2 pt-6 border-t border-border mt-6">
+            <Button onClick={handleSaveSettings} disabled={isSaving}>
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+              Save All Settings
+            </Button>
           </div>
         </motion.div>
 
@@ -343,8 +492,8 @@ const AdminSettings = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-card rounded-xl border border-border p-6"
+          transition={{ delay: 0.2 }}
+          className="bg-card rounded-xl border border-border p-6 lg:col-span-2"
         >
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
@@ -380,43 +529,39 @@ const AdminSettings = () => {
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-secondary/50 rounded-lg p-4">
-                  <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                    <Calendar className="h-4 w-4" />
-                    <span className="text-sm">Today</span>
-                  </div>
-                  <p className="text-2xl font-bold text-foreground">
-                    {formatAmount(revenueStats?.daily || 0)}
-                  </p>
+            <div className="grid md:grid-cols-4 gap-4">
+              <div className="bg-secondary/50 rounded-lg p-4">
+                <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                  <Calendar className="h-4 w-4" />
+                  <span className="text-sm">Today</span>
                 </div>
-                <div className="bg-secondary/50 rounded-lg p-4">
-                  <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                    <Calendar className="h-4 w-4" />
-                    <span className="text-sm">This Month</span>
-                  </div>
-                  <p className="text-2xl font-bold text-foreground">
-                    {formatAmount(revenueStats?.monthly || 0)}
-                  </p>
-                </div>
+                <p className="text-2xl font-bold text-foreground">
+                  {formatAmount(revenueStats?.daily || 0)}
+                </p>
               </div>
-
+              <div className="bg-secondary/50 rounded-lg p-4">
+                <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                  <Calendar className="h-4 w-4" />
+                  <span className="text-sm">This Month</span>
+                </div>
+                <p className="text-2xl font-bold text-foreground">
+                  {formatAmount(revenueStats?.monthly || 0)}
+                </p>
+              </div>
               <div className="bg-primary/5 rounded-lg p-4 border border-primary/20">
                 <div className="flex items-center gap-2 text-primary mb-1">
                   <DollarSign className="h-4 w-4" />
-                  <span className="text-sm font-medium">Since Last Reset</span>
+                  <span className="text-sm font-medium">Since Reset</span>
                 </div>
-                <p className="text-3xl font-bold text-foreground">
+                <p className="text-2xl font-bold text-foreground">
                   {formatAmount(revenueStats?.overall || 0)}
                 </p>
                 {revenueStats?.resetDate && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    Reset on {new Date(revenueStats.resetDate).toLocaleDateString()}
+                    {new Date(revenueStats.resetDate).toLocaleDateString()}
                   </p>
                 )}
               </div>
-
               <div className="bg-secondary/50 rounded-lg p-4">
                 <div className="flex items-center gap-2 text-muted-foreground mb-1">
                   <TrendingUp className="h-4 w-4" />

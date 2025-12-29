@@ -95,6 +95,25 @@ const AdminRefunds = () => {
     },
   });
 
+  // Helper function to send admin action notification
+  const sendAdminActionNotification = async (action: string, targetUsername: string | null, amount?: number, details?: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      await supabase.functions.invoke("send-telegram-notification", {
+        body: {
+          type: "admin_action",
+          action,
+          adminEmail: user?.email || "Unknown Admin",
+          username: targetUsername,
+          amount,
+          details,
+        },
+      });
+    } catch (error) {
+      console.error("Failed to send admin action notification:", error);
+    }
+  };
+
   const approveRefund = async (refund: RefundRequest) => {
     setProcessing(refund.id);
     try {
@@ -157,6 +176,14 @@ const AdminRefunds = () => {
         description: `${formatAmount(refund.amount)} credited to user's balance.`,
       });
 
+      // Send admin action notification
+      sendAdminActionNotification(
+        "Refund Approved",
+        refund.profiles?.username || null,
+        Number(refund.amount),
+        `Refund approved for order #${refund.order_id.slice(0, 8)}`
+      );
+
       queryClient.invalidateQueries({ queryKey: ["admin-refunds"] });
       queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
       setSelectedRefund(null);
@@ -191,6 +218,14 @@ const AdminRefunds = () => {
         title: "Refund rejected",
         description: "The refund request has been rejected.",
       });
+
+      // Send admin action notification
+      sendAdminActionNotification(
+        "Refund Rejected",
+        refund.profiles?.username || null,
+        Number(refund.amount),
+        `Refund rejected for order #${refund.order_id.slice(0, 8)}. Reason: ${rejectionNote || 'Not specified'}`
+      );
 
       queryClient.invalidateQueries({ queryKey: ["admin-refunds"] });
       setSelectedRefund(null);
