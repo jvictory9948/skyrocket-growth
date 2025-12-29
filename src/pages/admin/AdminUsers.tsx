@@ -137,7 +137,7 @@ const AdminUsers = () => {
         .from("transactions")
         .insert({
           user_id: userId,
-          type: isDebit ? "debit" : "deposit",
+          type: isDebit ? "charge" : "deposit",
           amount: Math.abs(amount),
           description: isDebit ? "Account debited by admin" : "Account funded by admin",
           status: "completed",
