@@ -91,19 +91,47 @@ const AdminUsers = () => {
     },
   });
 
+  // Helper function to send admin action notification
+  const sendAdminActionNotification = async (action: string, targetUser: UserProfile | null, amount?: number, details?: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      await supabase.functions.invoke("send-telegram-notification", {
+        body: {
+          type: "admin_action",
+          action,
+          adminEmail: user?.email || profile?.username || "Unknown Admin",
+          username: targetUser?.username,
+          userEmail: targetUser?.id,
+          amount,
+          details,
+        },
+      });
+    } catch (error) {
+      console.error("Failed to send admin action notification:", error);
+    }
+  };
+
   // Update user status mutation
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ userId, status }: { userId: string; status: UserStatus }) => {
+    mutationFn: async ({ userId, status, username }: { userId: string; status: UserStatus; username: string | null }) => {
       const { error } = await supabase
         .from("profiles")
         .update({ status })
         .eq("id", userId);
       
       if (error) throw error;
+      return { status, username };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       toast({ title: "User status updated successfully" });
+      // Send notification
+      sendAdminActionNotification(
+        `User ${data.status}`,
+        { id: "", username: data.username, balance: 0, status: data.status, created_at: "" },
+        undefined,
+        `User status changed to ${data.status}`
+      );
     },
     onError: (error: Error) => {
       toast({ 
@@ -145,7 +173,7 @@ const AdminUsers = () => {
       
       if (txError) throw txError;
 
-      return { newBalance };
+      return { newBalance, isDebit, amount, username, userId };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
@@ -153,6 +181,15 @@ const AdminUsers = () => {
         title: "Balance updated successfully",
         description: `New balance: ${formatAmount(data.newBalance)}`
       });
+      // Send admin action notification
+      sendAdminActionNotification(
+        data.isDebit ? "Account Debited" : "Account Funded",
+        { id: data.userId, username: data.username, balance: data.newBalance, status: "active", created_at: "" },
+        Math.abs(data.amount),
+        data.isDebit 
+          ? `Debited ${formatAmount(Math.abs(data.amount))} from user's account` 
+          : `Deposited ${formatAmount(data.amount)} to user's account`
+      );
       resetFundsDialog();
     },
     onError: (error: Error) => {
@@ -432,7 +469,7 @@ const AdminUsers = () => {
                           <DropdownMenuSeparator />
                           {user.status !== 'active' && (
                             <DropdownMenuItem
-                              onClick={() => updateStatusMutation.mutate({ userId: user.id, status: 'active' })}
+                              onClick={() => updateStatusMutation.mutate({ userId: user.id, status: 'active', username: user.username })}
                             >
                               <Play className="h-4 w-4 mr-2 text-green-500" />
                               Activate
@@ -440,7 +477,7 @@ const AdminUsers = () => {
                           )}
                           {user.status !== 'suspended' && (
                             <DropdownMenuItem
-                              onClick={() => updateStatusMutation.mutate({ userId: user.id, status: 'suspended' })}
+                              onClick={() => updateStatusMutation.mutate({ userId: user.id, status: 'suspended', username: user.username })}
                             >
                               <UserX className="h-4 w-4 mr-2 text-destructive" />
                               Suspend
@@ -448,7 +485,7 @@ const AdminUsers = () => {
                           )}
                           {user.status !== 'paused' && (
                             <DropdownMenuItem
-                              onClick={() => updateStatusMutation.mutate({ userId: user.id, status: 'paused' })}
+                              onClick={() => updateStatusMutation.mutate({ userId: user.id, status: 'paused', username: user.username })}
                             >
                               <Pause className="h-4 w-4 mr-2 text-amber-500" />
                               Pause

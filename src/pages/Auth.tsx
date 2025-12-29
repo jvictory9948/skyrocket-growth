@@ -1,12 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { z } from "zod";
-import { Loader2, Mail, Lock, User, ArrowRight } from "lucide-react";
+import { Loader2, Mail, Lock, User, ArrowRight, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Turnstile, TurnstileInstance } from "@marsidev/react-turnstile";
 
 const emailSchema = z.string().email("Please enter a valid email");
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
@@ -20,7 +22,10 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
-  const [errors, setErrors] = useState<{ email?: string; password?: string; username?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string; username?: string; captcha?: string }>({});
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileSiteKey, setTurnstileSiteKey] = useState<string>("");
+  const turnstileRef = useRef<TurnstileInstance>(null);
 
   useEffect(() => {
     if (user && !loading) {
@@ -28,8 +33,24 @@ const Auth = () => {
     }
   }, [user, loading, navigate]);
 
+  // Fetch Turnstile site key
+  useEffect(() => {
+    const fetchTurnstileKey = async () => {
+      const { data } = await supabase
+        .from("admin_settings")
+        .select("setting_value")
+        .eq("setting_key", "turnstile_site_key")
+        .single();
+      
+      if (data?.setting_value) {
+        setTurnstileSiteKey(data.setting_value);
+      }
+    };
+    fetchTurnstileKey();
+  }, []);
+
   const validateForm = () => {
-    const newErrors: { email?: string; password?: string; username?: string } = {};
+    const newErrors: { email?: string; password?: string; username?: string; captcha?: string } = {};
 
     const emailResult = emailSchema.safeParse(email);
     if (!emailResult.success) {
@@ -46,10 +67,29 @@ const Auth = () => {
       if (!usernameResult.success) {
         newErrors.username = usernameResult.error.errors[0].message;
       }
+      
+      // Check captcha for signup only
+      if (turnstileSiteKey && !turnstileToken) {
+        newErrors.captcha = "Please complete the captcha verification";
+      }
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const sendSignupNotification = async (userEmail: string, userName: string) => {
+    try {
+      await supabase.functions.invoke("send-telegram-notification", {
+        body: {
+          type: "signup",
+          userEmail,
+          username: userName,
+        },
+      });
+    } catch (error) {
+      console.error("Failed to send signup notification:", error);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -92,6 +132,9 @@ const Auth = () => {
             });
           }
         } else {
+          // Send signup notification
+          await sendSignupNotification(email, username);
+          
           toast({
             title: "Welcome to Epik!",
             description: "Your account has been created.",
@@ -101,6 +144,11 @@ const Auth = () => {
       }
     } finally {
       setIsSubmitting(false);
+      // Reset turnstile after submission
+      if (turnstileRef.current) {
+        turnstileRef.current.reset();
+        setTurnstileToken(null);
+      }
     }
   };
 
@@ -142,7 +190,11 @@ const Auth = () => {
           {/* Tabs */}
           <div className="flex gap-2 mb-6">
             <button
-              onClick={() => setIsLogin(true)}
+              onClick={() => {
+                setIsLogin(true);
+                setErrors({});
+                setTurnstileToken(null);
+              }}
               className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
                 isLogin
                   ? "bg-primary text-primary-foreground"
@@ -152,7 +204,11 @@ const Auth = () => {
               Login
             </button>
             <button
-              onClick={() => setIsLogin(false)}
+              onClick={() => {
+                setIsLogin(false);
+                setErrors({});
+                setTurnstileToken(null);
+              }}
               className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
                 !isLogin
                   ? "bg-primary text-primary-foreground"
@@ -225,6 +281,37 @@ const Auth = () => {
                 <p className="text-destructive text-xs mt-1">{errors.password}</p>
               )}
             </div>
+
+            {/* Turnstile Captcha (signup only) */}
+            {!isLogin && turnstileSiteKey && (
+              <div className="pt-2">
+                <div className="flex items-center gap-2 mb-2 text-sm text-muted-foreground">
+                  <ShieldCheck className="h-4 w-4" />
+                  <span>Security verification</span>
+                </div>
+                <Turnstile
+                  ref={turnstileRef}
+                  siteKey={turnstileSiteKey}
+                  onSuccess={(token) => {
+                    setTurnstileToken(token);
+                    setErrors((prev) => ({ ...prev, captcha: undefined }));
+                  }}
+                  onError={() => {
+                    setTurnstileToken(null);
+                    setErrors((prev) => ({ ...prev, captcha: "Verification failed. Please try again." }));
+                  }}
+                  onExpire={() => {
+                    setTurnstileToken(null);
+                  }}
+                  options={{
+                    theme: "auto",
+                  }}
+                />
+                {errors.captcha && (
+                  <p className="text-destructive text-xs mt-1">{errors.captcha}</p>
+                )}
+              </div>
+            )}
 
             <Button
               type="submit"
