@@ -9,6 +9,30 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 
+declare global {
+  interface Window {
+    Korapay?: {
+      initialize: (config: KorapayConfig) => void;
+      close: () => void;
+    };
+  }
+}
+
+interface KorapayConfig {
+  key: string;
+  reference: string;
+  amount: number;
+  currency: string;
+  customer: {
+    name: string;
+    email: string;
+  };
+  notification_url?: string;
+  onClose?: () => void;
+  onSuccess?: (data: { reference: string; status: string }) => void;
+  onFailed?: (data: { reference: string; status: string }) => void;
+}
+
 const iconMap: Record<string, React.FC<{ className?: string }>> = {
   CreditCard,
   Bitcoin,
@@ -41,6 +65,7 @@ const Funds = () => {
   const [customAmount, setCustomAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [korapayLoaded, setKorapayLoaded] = useState(false);
 
   const { data: paymentMethods, isLoading: methodsLoading } = useQuery({
     queryKey: ["payment-methods"],
@@ -54,6 +79,36 @@ const Funds = () => {
       return data as PaymentMethod[];
     },
   });
+
+  const { data: korapaySettings } = useQuery({
+    queryKey: ["korapay-settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("admin_settings")
+        .select("setting_key, setting_value")
+        .in("setting_key", ["korapay_public_key"]);
+      if (error) throw error;
+      const settings: Record<string, string> = {};
+      data.forEach((s) => {
+        settings[s.setting_key] = s.setting_value || "";
+      });
+      return settings;
+    },
+  });
+
+  // Load Korapay script
+  useEffect(() => {
+    if (document.getElementById("korapay-script")) {
+      setKorapayLoaded(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.id = "korapay-script";
+    script.src = "https://korablobstorage.blob.core.windows.net/modal-bucket/korapay-collections.min.js";
+    script.async = true;
+    script.onload = () => setKorapayLoaded(true);
+    document.body.appendChild(script);
+  }, []);
 
   useEffect(() => {
     if (paymentMethods && paymentMethods.length > 0 && !selectedMethod) {
@@ -82,6 +137,61 @@ const Funds = () => {
       toast({
         title: "Manual Transfer",
         description: "Please complete the bank transfer using the details shown. Your funds will be credited after confirmation.",
+      });
+      return;
+    }
+
+    if (selectedMethod === "korapay") {
+      if (!korapaySettings?.korapay_public_key) {
+        toast({
+          title: "Configuration Error",
+          description: "Korapay is not configured. Please contact support.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!korapayLoaded || !window.Korapay) {
+        toast({
+          title: "Loading...",
+          description: "Payment gateway is loading. Please try again.",
+        });
+        return;
+      }
+
+      const reference = `KORA-${user.id}-${Date.now()}`;
+      const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/korapay-webhook`;
+
+      window.Korapay.initialize({
+        key: korapaySettings.korapay_public_key,
+        reference,
+        amount: effectiveAmount,
+        currency: "NGN",
+        customer: {
+          name: profile?.username || "Customer",
+          email: user.email || "",
+        },
+        notification_url: webhookUrl,
+        onClose: () => {
+          console.log("Korapay modal closed");
+        },
+        onSuccess: async (data) => {
+          console.log("Korapay success:", data);
+          toast({
+            title: "Payment Successful!",
+            description: "Your funds will be credited shortly.",
+          });
+          // Refresh profile after a short delay to allow webhook to process
+          setTimeout(() => refreshProfile(), 3000);
+        },
+        onFailed: (data) => {
+          console.log("Korapay failed:", data);
+          toast({
+            title: "Payment Failed",
+            description: "Your payment could not be processed. Please try again.",
+            variant: "destructive",
+          });
+        },
       });
       return;
     }
@@ -213,6 +323,18 @@ const Funds = () => {
                   />
                 </div>
               </div>
+            </div>
+          )}
+
+          {selectedMethod === "korapay" && (
+            <div className="text-center py-8">
+              <CreditCard className="h-12 w-12 text-primary mx-auto mb-4" />
+              <p className="text-muted-foreground">
+                Pay securely with your card or bank transfer via Korapay.
+              </p>
+              <p className="text-xs text-muted-foreground mt-2">
+                Supports Nigerian Naira (NGN) payments.
+              </p>
             </div>
           )}
 
