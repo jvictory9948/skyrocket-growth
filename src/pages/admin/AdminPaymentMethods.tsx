@@ -38,6 +38,7 @@ const AdminPaymentMethods = () => {
   const queryClient = useQueryClient();
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
   const [manualDetails, setManualDetails] = useState<ManualDetails>({});
+  const [korapayPublicKey, setKorapayPublicKey] = useState("");
 
   const { data: paymentMethods, isLoading } = useQuery({
     queryKey: ["payment-methods-admin"],
@@ -51,6 +52,22 @@ const AdminPaymentMethods = () => {
     },
   });
 
+  const { data: korapaySettings } = useQuery({
+    queryKey: ["korapay-settings-admin"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("admin_settings")
+        .select("setting_key, setting_value")
+        .in("setting_key", ["korapay_public_key"]);
+      if (error) throw error;
+      const settings: Record<string, string> = {};
+      data.forEach((s) => {
+        settings[s.setting_key] = s.setting_value || "";
+      });
+      return settings;
+    },
+  });
+
   useEffect(() => {
     if (paymentMethods) {
       setMethods(paymentMethods);
@@ -61,8 +78,15 @@ const AdminPaymentMethods = () => {
     }
   }, [paymentMethods]);
 
+  useEffect(() => {
+    if (korapaySettings) {
+      setKorapayPublicKey(korapaySettings.korapay_public_key || "");
+    }
+  }, [korapaySettings]);
+
   const saveMutation = useMutation({
     mutationFn: async () => {
+      // Save payment methods
       for (const method of methods) {
         const updateData: Record<string, unknown> = {
           is_enabled: method.is_enabled,
@@ -76,10 +100,19 @@ const AdminPaymentMethods = () => {
           .eq("id", method.id);
         if (error) throw error;
       }
+
+      // Save Korapay settings
+      const { error: koraError } = await supabase
+        .from("admin_settings")
+        .update({ setting_value: korapayPublicKey })
+        .eq("setting_key", "korapay_public_key");
+      if (koraError) throw koraError;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payment-methods-admin"] });
       queryClient.invalidateQueries({ queryKey: ["payment-methods"] });
+      queryClient.invalidateQueries({ queryKey: ["korapay-settings-admin"] });
+      queryClient.invalidateQueries({ queryKey: ["korapay-settings"] });
       toast({ title: "Saved", description: "Payment methods updated successfully." });
     },
     onError: (error: Error) => {
@@ -151,11 +184,59 @@ const AdminPaymentMethods = () => {
           </div>
         </motion.div>
 
-        {/* Manual Transfer Details */}
+        {/* Korapay Settings */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
+          className="bg-card rounded-2xl shadow-soft border border-border p-6"
+        >
+          <h3 className="text-lg font-semibold text-foreground mb-6">
+            Korapay Settings
+          </h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Configure your Korapay payment gateway. Get your API keys from the{" "}
+            <a
+              href="https://merchant.korapay.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline"
+            >
+              Korapay Dashboard
+            </a>
+            .
+          </p>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Public Key
+              </label>
+              <Input
+                placeholder="pk_live_xxxxxxxxxxxxxxxx"
+                value={korapayPublicKey}
+                onChange={(e) => setKorapayPublicKey(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Your Korapay public key (starts with pk_live_ or pk_test_)
+              </p>
+            </div>
+            <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
+              <p className="text-sm text-foreground font-medium mb-2">Webhook URL</p>
+              <code className="text-xs bg-secondary px-2 py-1 rounded break-all">
+                {import.meta.env.VITE_SUPABASE_URL}/functions/v1/korapay-webhook
+              </code>
+              <p className="text-xs text-muted-foreground mt-2">
+                Add this URL in your Korapay dashboard under Webhook Settings.
+              </p>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Manual Transfer Details */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
           className="bg-card rounded-2xl shadow-soft border border-border p-6"
         >
           <h3 className="text-lg font-semibold text-foreground mb-6">
