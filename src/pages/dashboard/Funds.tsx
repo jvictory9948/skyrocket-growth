@@ -159,7 +159,9 @@ const Funds = () => {
         return;
       }
 
-      const reference = `KORA-${user.id}-${Date.now()}`;
+      // Reference must be max 50 characters
+      const shortId = user.id.substring(0, 8);
+      const reference = `KP-${shortId}-${Date.now()}`;
       const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/korapay-webhook`;
 
       window.Korapay.initialize({
@@ -436,7 +438,7 @@ const Funds = () => {
 
             <div className="mb-6">
               <label className="block text-sm font-medium text-foreground mb-2">
-                Amount (USD)
+                Amount {selectedMethod === "korapay" ? "(NGN)" : "(USD)"}
               </label>
               <Input
                 type="number"
