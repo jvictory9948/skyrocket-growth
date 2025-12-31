@@ -84,15 +84,20 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Create transaction record
-    await supabase.from("transactions").insert({
+    // Create transaction record (reference_id is UUID type, so we don't use the Korapay reference)
+    const { error: txError } = await supabase.from("transactions").insert({
       user_id: userId,
       type: "deposit",
       amount: amount,
       description: `Korapay deposit - ${reference}`,
       status: "completed",
-      reference_id: data.reference,
     });
+
+    if (txError) {
+      console.error("Failed to create transaction record:", txError);
+    } else {
+      console.log("Transaction record created successfully");
+    }
 
     // Get user email for notification
     const { data: authUser } = await supabase.auth.admin.getUserById(userId);
