@@ -40,9 +40,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Parse reference to get user_id (format: KORA-{userId}-{timestamp})
+    // Parse reference to get user_id (format: KP-{shortUserId}-{timestamp})
+    // The shortUserId is the first 8 characters of the full UUID
     const referenceParts = reference.split("-");
-    if (referenceParts.length < 2 || referenceParts[0] !== "KORA") {
+    if (referenceParts.length < 3 || referenceParts[0] !== "KP") {
       console.error("Invalid reference format:", reference);
       return new Response(JSON.stringify({ error: "Invalid reference" }), {
         status: 400,
@@ -50,25 +51,28 @@ Deno.serve(async (req) => {
       });
     }
 
-    const userId = referenceParts[1];
-
-    // Get current user balance
-    const { data: profile, error: profileError } = await supabase
+    // The short user ID is in format like "a7258c28" (8 chars)
+    const shortUserId = referenceParts[1];
+    
+    // Find the user by matching the start of their UUID
+    const { data: matchedProfile, error: matchError } = await supabase
       .from("profiles")
-      .select("balance, username")
-      .eq("id", userId)
+      .select("id, balance, username")
+      .ilike("id", `${shortUserId}%`)
       .single();
 
-    if (profileError || !profile) {
-      console.error("User not found:", userId, profileError);
+    if (matchError || !matchedProfile) {
+      console.error("User not found with short ID:", shortUserId, matchError);
       return new Response(JSON.stringify({ error: "User not found" }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    const userId = matchedProfile.id;
+
     // Update user balance
-    const newBalance = (profile.balance || 0) + amount;
+    const newBalance = (matchedProfile.balance || 0) + amount;
     const { error: updateError } = await supabase
       .from("profiles")
       .update({ balance: newBalance })
@@ -101,7 +105,7 @@ Deno.serve(async (req) => {
         body: {
           type: "deposit",
           userEmail: authUser?.user?.email || "Unknown",
-          username: profile.username,
+          username: matchedProfile.username,
           amount: amount,
         },
       });
