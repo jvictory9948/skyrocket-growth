@@ -188,20 +188,27 @@ const NewOrder = () => {
     setIsLoading(true);
 
     try {
-      // Place order with external API
+      // Send base charge (no client-side markup) to server which will apply global markup and debit user
+      const baseCharge = (parseFloat(selectedService.rate) * quantity) / 1000;
+
+      // include the user's auth token in the request so the Edge Function can authenticate
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token || sessionData?.access_token || null;
+
       const { data: apiResult, error: apiError } = await supabase.functions.invoke('place-order', {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         body: {
           service: selectedService.service,
           serviceName: selectedService.name,
           platform: selectedPlatform,
-          charge: totalPrice,
+          baseCharge,
           link,
           quantity,
         },
       });
 
       if (apiError) throw apiError;
-      if (apiResult.error) {
+      if (apiResult?.error) {
         toast({
           title: "Notice",
           description: apiResult.error,
@@ -210,29 +217,7 @@ const NewOrder = () => {
         return;
       }
 
-      // Save order to database with status from API and external order ID
-      const { error: orderError } = await supabase.from("orders").insert({
-        user_id: user.id,
-        platform: selectedPlatform,
-        service: selectedService.name,
-        link,
-        quantity,
-        charge: totalPrice,
-        status: apiResult.status || "pending",
-        external_order_id: apiResult.orderId?.toString() || null,
-      });
-
-      if (orderError) throw orderError;
-
-      // Update balance
-      const newBalance = (profile?.balance || 0) - totalPrice;
-      const { error: balanceError } = await supabase
-        .from("profiles")
-        .update({ balance: newBalance })
-        .eq("id", user.id);
-
-      if (balanceError) throw balanceError;
-
+      // Refresh profile to pick up server-side debit
       await refreshProfile();
 
       toast({

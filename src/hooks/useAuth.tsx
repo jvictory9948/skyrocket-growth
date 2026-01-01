@@ -114,19 +114,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { error: new Error("This email address has been blocked and cannot be used for registration.") };
     }
 
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          username,
-        },
-      },
-    });
-    return { error };
+    // Use an Edge Function that creates the user with the service role key
+    // so the email is marked confirmed immediately.
+    try {
+      const fnUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user`;
+      const resp = await fetch(fnUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, username }),
+      });
+
+      const json = await resp.json();
+      if (!resp.ok) {
+        return { error: new Error(json?.error || 'Failed to create user') };
+      }
+
+      // Sign the user in immediately after creation
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      return { error: signInError };
+    } catch (err) {
+      return { error: err instanceof Error ? err : new Error('Signup failed') };
+    }
   };
 
   const signIn = async (email: string, password: string) => {

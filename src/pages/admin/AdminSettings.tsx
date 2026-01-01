@@ -55,6 +55,7 @@ const AdminSettings = () => {
   // Other settings
   const [priceMarkup, setPriceMarkup] = useState("0");
   const [turnstileSiteKey, setTurnstileSiteKey] = useState("");
+  const [reallySimpleApiKey, setReallySimpleApiKey] = useState("");
   
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState<string | null>(null);
@@ -135,6 +136,7 @@ const AdminSettings = () => {
       setAdminActionChatId(settings.find(s => s.setting_key === "telegram_admin_action_chat_id")?.setting_value || "");
       setPriceMarkup(settings.find(s => s.setting_key === "price_markup_percentage")?.setting_value || "0");
       setTurnstileSiteKey(settings.find(s => s.setting_key === "turnstile_site_key")?.setting_value || "");
+      setReallySimpleApiKey(settings.find(s => s.setting_key === "reallysimplesocial_api_key")?.setting_value || "");
     }
   }, [settings]);
 
@@ -150,14 +152,15 @@ const AdminSettings = () => {
         { setting_key: "telegram_admin_action_chat_id", setting_value: adminActionChatId },
         { setting_key: "price_markup_percentage", setting_value: priceMarkup },
         { setting_key: "turnstile_site_key", setting_value: turnstileSiteKey },
+        { setting_key: "reallysimplesocial_api_key", setting_value: reallySimpleApiKey },
       ];
 
+      // Use upsert to create or update settings by key
       for (const update of updates) {
         const { error } = await supabase
           .from("admin_settings")
-          .update({ setting_value: update.setting_value })
-          .eq("setting_key", update.setting_key);
-        
+          .upsert([{ setting_key: update.setting_key, setting_value: update.setting_value }], { onConflict: 'setting_key' });
+
         if (error) throw error;
       }
 
@@ -347,6 +350,37 @@ const AdminSettings = () => {
             <div className="bg-secondary/50 rounded-lg p-4">
               <p className="text-sm text-muted-foreground">
                 Turnstile protects your signup form from bots without annoying puzzles.
+              </p>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* External API Keys */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="bg-card rounded-xl border border-border p-6 lg:col-span-2"
+        >
+          <div className="flex items-center gap-3 mb-6">
+            <TestTube className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold text-foreground">External API Keys</h2>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="rssApiKey">ReallySimpleSocial API Key</Label>
+              <Input
+                id="rssApiKey"
+                placeholder="Enter your ReallySimpleSocial API key"
+                value={reallySimpleApiKey}
+                onChange={(e) => setReallySimpleApiKey(e.target.value)}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Stored in `admin_settings` as <strong>reallysimplesocial_api_key</strong>.
+                Note: Edge Functions read the environment variable <strong>REALLYSIMPLESOCIAL_API_KEY</strong> —
+                update the function secret or redeploy functions to pick up this DB value if needed.
               </p>
             </div>
           </div>

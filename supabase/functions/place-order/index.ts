@@ -24,6 +24,7 @@ serve(async (req) => {
 
     // Get auth header
     const authHeader = req.headers.get('Authorization');
+    console.log('Incoming Authorization header present?', !!authHeader);
     if (!authHeader) {
       console.error('No authorization header found');
       throw new Error('No authorization header');
@@ -51,9 +52,15 @@ serve(async (req) => {
     
     console.log('Authenticated user:', user.id);
 
-    const { service, link, quantity, serviceName, platform, charge } = await req.json();
+    // diagnostic holders to return/log later
+    let insertedOrderVar: any = null;
+    let newBalanceVar: number | null = null;
+
+    const { service, link, quantity, serviceName, platform, charge, baseCharge } = await req.json();
+    // Accept `baseCharge` (preferred) or `charge` for backwards compatibility
 
     console.log(`Placing order: service=${service}, link=${link}, quantity=${quantity}`);
+    console.log('Received values:', { service, serviceName, platform, charge, baseCharge, quantity, link });
 
     // Place order with external API
     const formData = new FormData();
@@ -107,29 +114,107 @@ serve(async (req) => {
     // Send Telegram notification (fire and forget)
     try {
       const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
-      
-      // Get user profile for notification
-      const { data: profile } = await serviceClient
-        .from('profiles')
-        .select('username')
-        .eq('id', user.id)
-        .single();
 
-      // Send notification asynchronously
-      fetch(`${supabaseUrl}/functions/v1/send-telegram-notification`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'order',
-          userEmail: user.email,
-          username: profile?.username,
-          amount: charge || 0,
-          service: serviceName || service,
-          platform: platform || 'Unknown',
-          quantity: quantity,
-          link: link,
-        }),
-      }).catch(err => console.log('Telegram notification error (non-blocking):', err));
+      // Apply global markup and debit user atomically
+      try {
+        // Fetch global markup percentage
+        const { data: markupRow } = await serviceClient
+          .from('admin_settings')
+          .select('setting_value')
+          .eq('setting_key', 'price_markup_percentage')
+          .maybeSingle();
+
+        const markup = markupRow?.setting_value ? parseFloat(markupRow.setting_value) : 0;
+        const base = baseCharge != null ? Number(baseCharge) : Number(charge || 0);
+        const totalCharge = base * (1 + markup / 100);
+        console.log('Calculated charges', { base, markup, totalCharge });
+
+        // Get user balance
+        const { data: profileData, error: profileErr } = await serviceClient
+          .from('profiles')
+          .select('balance')
+          .eq('id', user.id)
+          .single();
+
+        if (profileErr || !profileData) {
+          console.error('Profile fetch error', profileErr);
+          throw new Error('User profile not found');
+        }
+
+        const currentBalance = Number(profileData.balance || 0);
+        console.log('Current balance for user', currentBalance);
+        if (currentBalance < totalCharge) {
+          console.error('Insufficient funds', { currentBalance, totalCharge });
+          return new Response(JSON.stringify({ error: 'Insufficient funds', currentBalance, totalCharge }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        newBalanceVar = currentBalance - totalCharge;
+        console.log('New balance after debit will be', newBalanceVar);
+
+        // Debit user
+        const { data: updatedProfile, error: updateErr } = await serviceClient
+          .from('profiles')
+          .update({ balance: newBalanceVar })
+          .eq('id', user.id)
+          .select();
+
+        console.log('Profile update result', { updatedProfile, updateErr });
+        if (updateErr) throw updateErr;
+
+        // Insert order record
+        const { data: insertedOrder, error: insertErr } = await serviceClient
+          .from('orders')
+          .insert({
+            user_id: user.id,
+            platform,
+            service: serviceName || service,
+            link,
+            quantity,
+            charge: totalCharge,
+            status: orderStatus,
+            external_order_id: result.order?.toString() || null,
+          })
+          .select()
+          .single();
+
+        if (insertErr) {
+          // attempt to revert balance update
+          await serviceClient.from('profiles').update({ balance: currentBalance }).eq('id', user.id);
+          throw insertErr;
+        }
+
+        insertedOrderVar = insertedOrder;
+        console.log('Inserted order', insertedOrderVar);
+
+        // Get user profile for notification
+        const { data: profile } = await serviceClient
+          .from('profiles')
+          .select('username')
+          .eq('id', user.id)
+          .single();
+
+        // Send notification asynchronously
+        fetch(`${supabaseUrl}/functions/v1/send-telegram-notification`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'order',
+            userEmail: user.email,
+            username: profile?.username,
+            amount: totalCharge || 0,
+            service: serviceName || service,
+            platform: platform || 'Unknown',
+            quantity: quantity,
+            link: link,
+          }),
+        }).catch(err => console.log('Telegram notification error (non-blocking):', err));
+      } catch (chargeErr) {
+        console.error('Charge/debit error:', chargeErr);
+        throw chargeErr;
+      }
     } catch (notifError) {
       console.log('Telegram notification setup error (non-blocking):', notifError);
     }
