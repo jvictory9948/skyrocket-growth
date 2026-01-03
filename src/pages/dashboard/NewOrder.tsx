@@ -193,7 +193,7 @@ const NewOrder = () => {
 
       // include the user's auth token in the request so the Edge Function can authenticate
       const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token || sessionData?.access_token || null;
+      const token = sessionData?.session?.access_token || null;
 
       const { data: apiResult, error: apiError } = await supabase.functions.invoke('place-order', {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
