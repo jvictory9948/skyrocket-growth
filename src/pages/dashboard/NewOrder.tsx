@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link as LinkIcon, Loader2, Minus, Plus, Check, RefreshCw, Info, AlertCircle, CheckCircle2, Star, RotateCcw } from "lucide-react";
+import { Link as LinkIcon, Loader2, Minus, Plus, Check, RefreshCw, Info, AlertCircle, CheckCircle2, Star, RotateCcw, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
@@ -64,6 +64,7 @@ const NewOrder = () => {
   const [loadingServices, setLoadingServices] = useState(true);
   const [priceMarkup, setPriceMarkup] = useState(0);
   const [showFavorites, setShowFavorites] = useState(false);
+  const [showPlatformDropdown, setShowPlatformDropdown] = useState(false);
 
   useEffect(() => {
     fetchServices();
@@ -356,36 +357,68 @@ const NewOrder = () => {
           <label className="block text-sm font-medium text-foreground mb-4">
             1. Select Platform
           </label>
-          <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-2">
-            {platforms.map((platform) => {
-              const Icon = socialIcons[platform.id];
-              const serviceCount = getPlatformServices(platform.id).length;
-              return (
-                <motion.button
-                  key={platform.id}
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
-                  onClick={() => handlePlatformSelect(platform.id)}
-                  className={`flex items-center gap-4 p-4 rounded-xl transition-all ${
-                    selectedPlatform === platform.id
-                      ? "bg-primary/10 ring-2 ring-primary"
-                      : "bg-secondary hover:bg-accent"
-                  }`}
-                >
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowPlatformDropdown(!showPlatformDropdown)}
+              className="w-full flex items-center gap-4 p-4 rounded-xl bg-secondary hover:bg-accent border border-border transition-all text-left"
+            >
+              {selectedPlatform ? (
+                <>
                   <div className="h-10 w-10 bg-background rounded-lg flex items-center justify-center shrink-0">
-                    {Icon && <Icon className="h-5 w-5" />}
+                    {socialIcons[selectedPlatform] && React.createElement(socialIcons[selectedPlatform], { className: "h-5 w-5" })}
                   </div>
-                  <span className="text-sm font-medium text-foreground flex-1 text-left">
-                    {platform.name}
+                  <span className="text-sm font-medium text-foreground flex-1">
+                    {platforms.find(p => p.id === selectedPlatform)?.name}
                   </span>
-                  {serviceCount > 0 && (
-                    <span className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full">
-                      {serviceCount}
-                    </span>
-                  )}
-                </motion.button>
-              );
-            })}
+                </>
+              ) : (
+                <span className="text-sm text-muted-foreground flex-1">Select a platform...</span>
+              )}
+              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${showPlatformDropdown ? 'rotate-180' : ''}`} />
+            </button>
+            
+            <AnimatePresence>
+              {showPlatformDropdown && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="absolute z-50 w-full mt-2 bg-popover border border-border rounded-xl shadow-lg overflow-hidden"
+                >
+                  <div className="max-h-[300px] overflow-y-auto">
+                    {platforms.map((platform) => {
+                      const Icon = socialIcons[platform.id];
+                      const serviceCount = getPlatformServices(platform.id).length;
+                      return (
+                        <button
+                          key={platform.id}
+                          onClick={() => {
+                            handlePlatformSelect(platform.id);
+                            setShowPlatformDropdown(false);
+                          }}
+                          className={`w-full flex items-center gap-4 p-4 transition-all hover:bg-accent ${
+                            selectedPlatform === platform.id ? "bg-primary/10" : ""
+                          }`}
+                        >
+                          <div className="h-10 w-10 bg-background rounded-lg flex items-center justify-center shrink-0">
+                            {Icon && <Icon className="h-5 w-5" />}
+                          </div>
+                          <span className="text-sm font-medium text-foreground flex-1 text-left">
+                            {platform.name}
+                          </span>
+                          {serviceCount > 0 && (
+                            <span className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full">
+                              {serviceCount}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 
