@@ -50,10 +50,10 @@ export const ServiceReviewDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md bg-card border-border">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Your Review" : "Rate This Service"}</DialogTitle>
-          <DialogDescription className="truncate">
+          <DialogTitle className="text-foreground">{isEditing ? "Edit Your Review" : "Rate This Service"}</DialogTitle>
+          <DialogDescription className="truncate text-muted-foreground">
             {serviceName} • <span className="capitalize">{platform}</span>
           </DialogDescription>
         </DialogHeader>
@@ -108,6 +108,7 @@ export const ServiceReviewDialog = ({
               onChange={(e) => setComment(e.target.value)}
               rows={3}
               maxLength={500}
+              className="bg-secondary border-border text-foreground"
             />
             <p className="text-xs text-muted-foreground text-right">
               {comment.length}/500
