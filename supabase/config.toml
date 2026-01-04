@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.create-user]
 verify_jwt = false
+
+[functions.track-user-login]
+verify_jwt = false
