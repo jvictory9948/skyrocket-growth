@@ -178,6 +178,9 @@ export type Database = {
           currency: string
           full_name: string | null
           id: string
+          last_ip: string | null
+          last_location: string | null
+          last_login_at: string | null
           phone: string | null
           status: Database["public"]["Enums"]["user_status"]
           updated_at: string
@@ -191,6 +194,9 @@ export type Database = {
           currency?: string
           full_name?: string | null
           id: string
+          last_ip?: string | null
+          last_location?: string | null
+          last_login_at?: string | null
           phone?: string | null
           status?: Database["public"]["Enums"]["user_status"]
           updated_at?: string
@@ -204,6 +210,9 @@ export type Database = {
           currency?: string
           full_name?: string | null
           id?: string
+          last_ip?: string | null
+          last_location?: string | null
+          last_login_at?: string | null
           phone?: string | null
           status?: Database["public"]["Enums"]["user_status"]
           updated_at?: string

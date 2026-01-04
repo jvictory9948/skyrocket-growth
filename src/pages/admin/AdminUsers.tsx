@@ -12,7 +12,9 @@ import {
   Calendar,
   Wallet,
   Loader2,
-  KeyRound
+  KeyRound,
+  Globe,
+  MapPin
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -59,6 +61,9 @@ interface UserProfile {
   status: UserStatus;
   created_at: string;
   email?: string;
+  last_ip?: string | null;
+  last_location?: string | null;
+  last_login_at?: string | null;
 }
 
 const AdminUsers = () => {
@@ -403,6 +408,7 @@ const AdminUsers = () => {
                 <th className="text-left p-4 text-sm font-medium text-muted-foreground">User</th>
                 <th className="text-left p-4 text-sm font-medium text-muted-foreground">Balance</th>
                 <th className="text-left p-4 text-sm font-medium text-muted-foreground">Status</th>
+                <th className="text-left p-4 text-sm font-medium text-muted-foreground">IP / Location</th>
                 <th className="text-left p-4 text-sm font-medium text-muted-foreground">Joined</th>
                 <th className="text-right p-4 text-sm font-medium text-muted-foreground">Actions</th>
               </tr>
@@ -410,13 +416,13 @@ const AdminUsers = () => {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                  <td colSpan={6} className="p-8 text-center text-muted-foreground">
                     Loading users...
                   </td>
                 </tr>
               ) : filteredUsers?.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                  <td colSpan={6} className="p-8 text-center text-muted-foreground">
                     No users found.
                   </td>
                 </tr>
@@ -445,6 +451,26 @@ const AdminUsers = () => {
                     </td>
                     <td className="p-4">
                       {getStatusBadge(user.status)}
+                    </td>
+                    <td className="p-4">
+                      <div className="space-y-1">
+                        {user.last_ip ? (
+                          <>
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <Globe className="h-3 w-3" />
+                              <span className="font-mono">{user.last_ip}</span>
+                            </div>
+                            {user.last_location && user.last_location !== "Unknown" && (
+                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <MapPin className="h-3 w-3" />
+                                <span>{user.last_location}</span>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Not tracked</span>
+                        )}
+                      </div>
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
