@@ -40,8 +40,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Parse reference to get user_id (format: KP-{fullUserId})
-    // Example: KP-a7258c28-20c2-4113-a227-e563841227ac
+    // Parse reference to get user_id (format: KP-{fullUserId}-{shortTimestamp})
+    // Example: KP-a7258c28-20c2-4113-a227-e563841227ac-91938123
     if (!reference.startsWith("KP-")) {
       console.error("Invalid reference format (missing KP- prefix):", reference);
       return new Response(JSON.stringify({ error: "Invalid reference format" }), {
@@ -50,8 +50,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Extract the user ID (everything after "KP-")
-    const userId = reference.substring(3);
+    // Extract the user ID (format: KP-{uuid}-{shortTimestamp})
+    // UUID format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (5 parts separated by "-")
+    const parts = reference.substring(3).split('-');
+    // Join the first 5 parts to reconstruct the UUID (ignore the timestamp suffix)
+    const userId = parts.slice(0, 5).join('-');
     console.log("Extracted user ID:", userId);
     
     // Find the user by their UUID

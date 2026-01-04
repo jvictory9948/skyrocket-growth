@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, MessageCircle, Mail, Send, Loader2, Copy, Check } from "lucide-react";
+import { ChevronDown, Mail, Send, Loader2, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -265,17 +265,6 @@ const Support = () => {
         </motion.div>
       </div>
 
-      {/* Floating Chat Button */}
-      <motion.button
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.95 }}
-        className="fixed bottom-6 right-6 h-14 w-14 bg-primary rounded-full shadow-glow flex items-center justify-center text-primary-foreground z-50"
-      >
-        <MessageCircle className="h-6 w-6" />
-      </motion.button>
     </div>
   );
 };

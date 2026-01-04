@@ -98,6 +98,19 @@ export const DashboardSidebar = () => {
         transition={{ type: "spring", damping: 20 }}
         className="lg:hidden fixed top-16 left-0 bottom-0 w-64 bg-card border-r border-border z-50 p-4"
       >
+        {/* Logout at top */}
+        <div className="flex justify-end mb-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground hover:text-destructive"
+            onClick={handleSignOut}
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Logout
+          </Button>
+        </div>
+
         <nav className="space-y-1">
           {navItems.map((item) => (
             <Link
@@ -129,26 +142,23 @@ export const DashboardSidebar = () => {
             </Link>
           )}
         </nav>
-
-        <div className="absolute bottom-4 left-4 right-4">
-          <Button
-            variant="ghost"
-            className="w-full justify-start text-muted-foreground hover:text-destructive"
-            onClick={handleSignOut}
-          >
-            <LogOut className="h-5 w-5 mr-3" />
-            Logout
-          </Button>
-        </div>
       </motion.aside>
 
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex fixed top-0 left-0 bottom-0 w-64 bg-card border-r border-border flex-col z-40">
         {/* Logo */}
-        <div className="h-20 flex items-center px-4 border-b border-border">
+        <div className="h-20 flex items-center px-6 border-b border-border">
           <Link to="/dashboard" className="flex items-center gap-2">
             <img src={epikLogo} alt="Epik" className="h-16 w-auto" />
           </Link>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground hover:text-destructive"
+            onClick={handleSignOut}
+          >
+            <LogOut className="h-5 w-5" />
+          </Button>
         </div>
 
         {/* Balance */}
@@ -211,9 +221,9 @@ export const DashboardSidebar = () => {
           )}
         </nav>
 
-        {/* User & Logout */}
+        {/* User Info & Theme */}
         <div className="p-4 border-t border-border">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-accent-foreground flex items-center justify-center text-primary-foreground font-semibold text-sm">
                 {profile?.username?.charAt(0).toUpperCase() || "U"}
@@ -226,14 +236,6 @@ export const DashboardSidebar = () => {
             </div>
             <ThemeToggle />
           </div>
-          <Button
-            variant="ghost"
-            className="w-full justify-start text-muted-foreground hover:text-destructive"
-            onClick={handleSignOut}
-          >
-            <LogOut className="h-5 w-5 mr-3" />
-            Logout
-          </Button>
         </div>
       </aside>
     </>

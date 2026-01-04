@@ -159,8 +159,9 @@ const Funds = () => {
         return;
       }
 
-      // Reference format: KP-{fullUserId} (36 chars UUID + 3 chars prefix = 39 chars, under 50 limit)
-      const reference = `KP-${user.id}`;
+      // Reference format: KP-{fullUserId}-{shortTimestamp} (max 50 chars)
+      // UUID is 36 chars, prefix is 3, separator is 1, leaving 10 for timestamp suffix
+      const reference = `KP-${user.id}-${Date.now().toString().slice(-8)}`;
       const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/korapay-webhook`;
 
       window.Korapay.initialize({
@@ -287,7 +288,7 @@ const Funds = () => {
                   }`}
                 >
                   <Icon className="h-4 w-4" />
-                  <span className="hidden sm:inline">{method.name}</span>
+                  <span>{method.name}</span>
                 </button>
               );
             })}
