@@ -1,5 +1,5 @@
 import { motion, useScroll, useTransform } from "framer-motion";
-import { ArrowRight, Zap, Shield, Clock, TrendingUp, Check, Star, Users, Globe, ChevronDown, Sparkles, MessageCircle, Award, Heart } from "lucide-react";
+import { ArrowRight, Zap, Shield, Clock, TrendingUp, Check, Star, Users, Globe, ChevronDown, Sparkles, MessageCircle, Award, Heart, Lock, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Footer } from "@/components/Footer";
@@ -11,9 +11,9 @@ import { cn } from "@/lib/utils";
 
 const platforms = [
   { id: "instagram", name: "Instagram", color: "from-pink-500 to-purple-600" },
-  { id: "tiktok", name: "TikTok", color: "from-cyan-500 to-pink-500" },
+  { id: "tiktok", name: "TikTok", color: "from-gray-900 to-black" },
   { id: "youtube", name: "YouTube", color: "from-red-500 to-red-600" },
-  { id: "twitter", name: "Twitter", color: "from-blue-400 to-blue-600" },
+  { id: "twitter", name: "Twitter", color: "from-gray-900 to-black" },
   { id: "linkedin", name: "LinkedIn", color: "from-blue-600 to-blue-800" },
   { id: "facebook", name: "Facebook", color: "from-blue-500 to-blue-700" },
 ];
@@ -132,6 +132,19 @@ const whyChooseUs = [
   { title: "Award Winning", description: "Recognized for excellence in customer service", icon: Award },
 ];
 
+const pricingHighlights = [
+  { service: "Instagram Followers", price: "Starting from ₦50", popular: true },
+  { service: "TikTok Likes", price: "Starting from ₦30", popular: false },
+  { service: "YouTube Views", price: "Starting from ₦100", popular: true },
+  { service: "Twitter Retweets", price: "Starting from ₦40", popular: false },
+];
+
+const guarantees = [
+  { title: "Money Back Guarantee", description: "Full refund if we can't deliver your order", icon: Shield },
+  { title: "Secure Payments", description: "Your payment info is always encrypted", icon: Lock },
+  { title: "Privacy First", description: "We never share your data with third parties", icon: Eye },
+];
+
 const FAQItem = ({ question, answer, isOpen, onClick }: { question: string; answer: string; isOpen: boolean; onClick: () => void }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
@@ -223,21 +236,15 @@ const Landing = () => {
 
       {/* Hero */}
       <section className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
-        {/* Animated background elements */}
+        {/* Animated background elements - simplified for mobile performance */}
         <div className="absolute inset-0 pointer-events-none">
-          <motion.div
-            style={{ y: y1 }}
-            className="absolute top-1/4 left-[10%] w-72 h-72 bg-primary/20 rounded-full blur-3xl animate-pulse"
-          />
-          <motion.div
-            style={{ y: y2 }}
-            className="absolute bottom-1/4 right-[15%] w-96 h-96 bg-tertiary/15 rounded-full blur-3xl animate-pulse"
-          />
-          <div className="absolute top-[60%] left-[60%] w-64 h-64 bg-accent/30 rounded-full blur-3xl animate-float-slow" />
+          <div className="absolute top-1/4 left-[10%] w-72 h-72 bg-primary/20 rounded-full blur-3xl" />
+          <div className="absolute bottom-1/4 right-[15%] w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
+          <div className="absolute top-[60%] left-[60%] w-64 h-64 bg-accent/20 rounded-full blur-3xl" />
         </div>
 
-        {/* Floating decorative shapes */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {/* Floating decorative shapes - hidden on mobile for performance */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden hidden md:block">
           <motion.div
             animate={{ y: [-20, 20, -20], rotate: [0, 10, 0] }}
             transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
@@ -246,12 +253,12 @@ const Landing = () => {
           <motion.div
             animate={{ y: [20, -20, 20], rotate: [0, -10, 0] }}
             transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            className="absolute top-[40%] left-[10%] w-12 h-12 bg-tertiary/20 rounded-full"
+            className="absolute top-[40%] left-[10%] w-12 h-12 bg-primary/15 rounded-full"
           />
           <motion.div
             animate={{ y: [-15, 15, -15], x: [-10, 10, -10] }}
             transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-            className="absolute bottom-[30%] right-[10%] w-20 h-20 border-2 border-tertiary/20 rounded-full"
+            className="absolute bottom-[30%] right-[10%] w-20 h-20 border-2 border-primary/15 rounded-full"
           />
         </div>
 
@@ -545,6 +552,107 @@ const Landing = () => {
               >
                 <div className="inline-flex items-center justify-center h-14 w-14 rounded-xl bg-gradient-primary mb-4">
                   <item.icon className="h-7 w-7 text-white" />
+                </div>
+                <h4 className="font-heading font-semibold text-foreground mb-2">{item.title}</h4>
+                <p className="text-sm text-muted-foreground font-body">{item.description}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Preview */}
+      <section className="py-24 bg-secondary/30">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <span className="inline-block px-4 py-1.5 bg-accent rounded-full text-sm font-accent font-medium text-primary mb-4">
+              Affordable Pricing
+            </span>
+            <h2 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-4">
+              Unbeatable <span className="text-gradient">Prices</span>
+            </h2>
+            <p className="text-muted-foreground max-w-xl mx-auto font-body">
+              Get premium social media services at prices that won't break the bank.
+            </p>
+          </motion.div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto mb-12">
+            {pricingHighlights.map((item, index) => (
+              <motion.div
+                key={item.service}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className={cn(
+                  "relative bg-card border rounded-2xl p-5 text-center transition-all duration-300 hover:shadow-lg",
+                  item.popular ? "border-primary/50 shadow-glow" : "border-border hover:border-primary/30"
+                )}
+              >
+                {item.popular && (
+                  <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-3 py-0.5 bg-primary text-primary-foreground text-xs font-medium rounded-full">
+                    Popular
+                  </span>
+                )}
+                <h4 className="font-heading font-semibold text-foreground mb-2">{item.service}</h4>
+                <p className="text-primary font-display font-bold">{item.price}</p>
+              </motion.div>
+            ))}
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center"
+          >
+            <Link to={user ? "/dashboard/new-order" : "/auth"}>
+              <Button variant="hero" size="lg" className="group">
+                View All Services
+                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Guarantees */}
+      <section className="py-24">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <span className="inline-block px-4 py-1.5 bg-accent rounded-full text-sm font-accent font-medium text-primary mb-4">
+              Our Promise
+            </span>
+            <h2 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-4">
+              Your Trust, <span className="text-gradient">Our Priority</span>
+            </h2>
+            <p className="text-muted-foreground max-w-xl mx-auto font-body">
+              We stand behind every order with our ironclad guarantees.
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            {guarantees.map((item, index) => (
+              <motion.div
+                key={item.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="bg-card border border-border rounded-2xl p-6 text-center hover:border-primary/30 hover:shadow-lg transition-all duration-300"
+              >
+                <div className="inline-flex items-center justify-center h-14 w-14 rounded-full bg-accent mb-4">
+                  <item.icon className="h-7 w-7 text-primary" />
                 </div>
                 <h4 className="font-heading font-semibold text-foreground mb-2">{item.title}</h4>
                 <p className="text-sm text-muted-foreground font-body">{item.description}</p>
