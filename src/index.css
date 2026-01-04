@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --background: 260 30% 97%;
+    --background: 265 30% 98%;
     --foreground: 260 25% 12%;
 
     --card: 0 0% 100%;
@@ -16,17 +16,17 @@
     --primary: 270 80% 60%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 260 35% 94%;
+    --secondary: 265 35% 94%;
     --secondary-foreground: 260 25% 12%;
 
-    --muted: 260 25% 92%;
+    --muted: 265 25% 92%;
     --muted-foreground: 260 15% 40%;
 
     --accent: 270 70% 93%;
     --accent-foreground: 270 80% 40%;
 
-    --tertiary: 45 95% 55%;
-    --tertiary-foreground: 45 95% 15%;
+    --tertiary: 200 85% 55%;
+    --tertiary-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
@@ -37,8 +37,8 @@
     --info: 199 89% 48%;
     --info-foreground: 0 0% 100%;
 
-    --border: 260 25% 88%;
-    --input: 260 25% 88%;
+    --border: 265 25% 88%;
+    --input: 265 25% 88%;
     --ring: 270 80% 60%;
 
     --radius: 1rem;
@@ -47,10 +47,10 @@
     --purple-glow: 0 10px 60px -10px hsla(270, 80%, 60%, 0.35);
     --purple-glow-intense: 0 20px 80px -20px hsla(270, 80%, 60%, 0.5);
     --purple-glow-soft: 0 0 100px 20px hsla(270, 80%, 60%, 0.15);
-    --glass-bg: hsla(260, 30%, 98%, 0.9);
+    --glass-bg: hsla(265, 30%, 98%, 0.9);
     --glass-blur: blur(16px);
     --gradient-primary: linear-gradient(135deg, hsl(270, 80%, 60%), hsl(290, 85%, 55%));
-    --gradient-secondary: linear-gradient(135deg, hsl(45, 95%, 55%), hsl(35, 95%, 50%));
+    --gradient-secondary: linear-gradient(135deg, hsl(270, 70%, 70%), hsl(200, 85%, 55%));
     --gradient-glow: radial-gradient(ellipse at center, hsla(270, 80%, 60%, 0.15), transparent 70%);
 
     --sidebar-background: 0 0% 99%;
@@ -59,7 +59,7 @@
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 270 60% 95%;
     --sidebar-accent-foreground: 270 80% 40%;
-    --sidebar-border: 260 25% 90%;
+    --sidebar-border: 265 25% 90%;
     --sidebar-ring: 270 80% 60%;
   }
 
