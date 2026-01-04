@@ -1,5 +1,24 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Zap, Shield, Clock, TrendingUp, Check, Star, Users, Globe, ChevronDown, Sparkles, MessageCircle, Award, Heart, Lock, Eye, Mail, Send } from "lucide-react";
+import {
+  ArrowRight,
+  Zap,
+  Shield,
+  Clock,
+  TrendingUp,
+  Check,
+  Star,
+  Users,
+  Globe,
+  ChevronDown,
+  Sparkles,
+  MessageCircle,
+  Award,
+  Heart,
+  Lock,
+  Eye,
+  Mail,
+  Send,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,17 +44,20 @@ const features = [
   {
     icon: Zap,
     title: "Instant Delivery",
-    description: "Most orders start within minutes. Watch your engagement grow in real-time with our automated systems.",
+    description:
+      "Most orders start within minutes. Watch your engagement grow in real-time with our automated systems.",
   },
   {
     icon: Shield,
     title: "100% Safe & Secure",
-    description: "We use safe delivery methods that comply with platform guidelines. Your account safety is our priority.",
+    description:
+      "We use safe delivery methods that comply with platform guidelines. Your account safety is our priority.",
   },
   {
     icon: Clock,
     title: "24/7 Support",
-    description: "Our support team is always available to help you with any questions. We're here whenever you need us.",
+    description:
+      "Our support team is always available to help you with any questions. We're here whenever you need us.",
   },
   {
     icon: TrendingUp,
@@ -108,11 +130,13 @@ const stats = [
 const faqs = [
   {
     question: "How fast will I see results?",
-    answer: "Most orders start within minutes of placing them. Depending on the service, you'll see full results within a few hours to 24 hours.",
+    answer:
+      "Most orders start within minutes of placing them. Depending on the service, you'll see full results within a few hours to 24 hours.",
   },
   {
     question: "Is it safe for my account?",
-    answer: "Yes! We use organic delivery methods that comply with platform guidelines. Your account safety is our top priority.",
+    answer:
+      "Yes! We use organic delivery methods that comply with platform guidelines. Your account safety is our top priority.",
   },
   {
     question: "What payment methods do you accept?",
@@ -120,11 +144,13 @@ const faqs = [
   },
   {
     question: "Can I get a refund?",
-    answer: "Yes, if we can't deliver your order, you'll receive a full refund to your wallet balance. Check our refund policy for details.",
+    answer:
+      "Yes, if we can't deliver your order, you'll receive a full refund to your wallet balance. Check our refund policy for details.",
   },
   {
     question: "Do you offer bulk discounts?",
-    answer: "Yes! We offer competitive rates for bulk orders. Contact our support team for custom pricing on large orders.",
+    answer:
+      "Yes! We offer competitive rates for bulk orders. Contact our support team for custom pricing on large orders.",
   },
 ];
 
@@ -136,7 +162,7 @@ const whyChooseUs = [
 ];
 
 const pricingHighlights = [
-  { service: "Instagram Followers", price: "Starting from ₦50", popular: true },
+  { service: "Instagram Followers", price: "Starting from ₦150", popular: true },
   { service: "TikTok Likes", price: "Starting from ₦30", popular: false },
   { service: "YouTube Views", price: "Starting from ₦100", popular: true },
   { service: "Twitter Retweets", price: "Starting from ₦40", popular: false },
@@ -148,7 +174,17 @@ const guarantees = [
   { title: "Privacy First", description: "We never share your data with third parties", icon: Eye },
 ];
 
-const FAQItem = ({ question, answer, isOpen, onClick }: { question: string; answer: string; isOpen: boolean; onClick: () => void }) => (
+const FAQItem = ({
+  question,
+  answer,
+  isOpen,
+  onClick,
+}: {
+  question: string;
+  answer: string;
+  isOpen: boolean;
+  onClick: () => void;
+}) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     whileInView={{ opacity: 1, y: 0 }}
@@ -160,7 +196,9 @@ const FAQItem = ({ question, answer, isOpen, onClick }: { question: string; answ
       className="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-accent/50 transition-colors"
     >
       <span className="font-heading font-semibold text-foreground">{question}</span>
-      <ChevronDown className={cn("h-5 w-5 text-muted-foreground transition-transform duration-300", isOpen && "rotate-180")} />
+      <ChevronDown
+        className={cn("h-5 w-5 text-muted-foreground transition-transform duration-300", isOpen && "rotate-180")}
+      />
     </button>
     <motion.div
       initial={false}
@@ -184,9 +222,7 @@ const NewsletterForm = () => {
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase
-        .from("newsletter_subscribers")
-        .insert({ email: email.toLowerCase().trim() });
+      const { error } = await supabase.from("newsletter_subscribers").insert({ email: email.toLowerCase().trim() });
 
       if (error) {
         if (error.code === "23505") {
@@ -281,13 +317,22 @@ const Landing = () => {
           </a>
 
           <nav className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+            <a
+              href="#features"
+              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+            >
               Features
             </a>
-            <a href="#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+            <a
+              href="#how-it-works"
+              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+            >
               How It Works
             </a>
-            <a href="#platforms" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+            <a
+              href="#platforms"
+              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+            >
               Platforms
             </a>
             <a href="#faq" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
@@ -305,7 +350,9 @@ const Landing = () => {
             ) : (
               <>
                 <Link to="/auth">
-                  <Button variant="ghost" size="sm">Login</Button>
+                  <Button variant="ghost" size="sm">
+                    Login
+                  </Button>
                 </Link>
                 <Link to="/auth">
                   <Button variant="hero" size="sm">
@@ -351,7 +398,7 @@ const Landing = () => {
           className="absolute inset-0 opacity-30"
           style={{
             backgroundImage: `radial-gradient(circle at 1px 1px, hsl(var(--muted-foreground) / 0.15) 1px, transparent 0)`,
-            backgroundSize: '40px 40px',
+            backgroundSize: "40px 40px",
           }}
         />
 
@@ -364,7 +411,9 @@ const Landing = () => {
               className="inline-flex items-center gap-2 bg-accent/80 backdrop-blur-sm rounded-full px-5 py-2.5 mb-8 border border-primary/20"
             >
               <Sparkles className="h-4 w-4 text-primary animate-pulse" />
-              <span className="text-sm font-accent font-medium text-foreground">#1 Trusted SMM Panel • Fast & Reliable</span>
+              <span className="text-sm font-accent font-medium text-foreground">
+                #1 Trusted SMM Panel • Fast & Reliable
+              </span>
             </motion.div>
 
             <motion.h1
@@ -386,9 +435,8 @@ const Landing = () => {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 font-body"
             >
-              The most automated, safe, and instant social media boosting panel.
-              Get authentic followers, likes, and engagement from a trusted platform
-              designed to help influencers, brands, and businesses scale up fast!
+              The most automated, safe, and instant social media boosting panel. Get authentic followers, likes, and
+              engagement from a trusted platform designed to help influencers, brands, and businesses scale up fast!
             </motion.p>
 
             <motion.div
@@ -498,7 +546,12 @@ const Landing = () => {
                 whileHover={{ scale: 1.05, y: -3 }}
                 className="flex flex-col items-center gap-2 p-4 rounded-xl bg-card/50 border border-border/50 hover:border-primary/30 hover:bg-card transition-all duration-300 cursor-pointer group"
               >
-                <div className={cn("p-3 rounded-xl bg-gradient-to-br opacity-90 group-hover:opacity-100 transition-opacity", platform.color)}>
+                <div
+                  className={cn(
+                    "p-3 rounded-xl bg-gradient-to-br opacity-90 group-hover:opacity-100 transition-opacity",
+                    platform.color,
+                  )}
+                >
                   {Icon && <Icon className="h-5 w-5 md:h-6 md:w-6 text-white" />}
                 </div>
                 <span className="text-sm font-heading font-medium text-foreground">{platform.name}</span>
@@ -528,7 +581,8 @@ const Landing = () => {
               Why <span className="text-gradient">Epik</span> Stands Out
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto font-body">
-              We've helped thousands of creators and businesses grow their audience with our reliable, fast, and affordable services.
+              We've helped thousands of creators and businesses grow their audience with our reliable, fast, and
+              affordable services.
             </p>
           </motion.div>
 
@@ -675,7 +729,7 @@ const Landing = () => {
                 transition={{ delay: index * 0.1 }}
                 className={cn(
                   "relative bg-card border rounded-2xl p-5 text-center transition-all duration-300 hover:shadow-lg",
-                  item.popular ? "border-primary/50 shadow-glow" : "border-border hover:border-primary/30"
+                  item.popular ? "border-primary/50 shadow-glow" : "border-border hover:border-primary/30",
                 )}
               >
                 {item.popular && (
@@ -813,7 +867,8 @@ const Landing = () => {
               Frequently Asked <span className="text-gradient">Questions</span>
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto font-body">
-              Got questions? We've got answers. If you can't find what you're looking for, reach out to our support team.
+              Got questions? We've got answers. If you can't find what you're looking for, reach out to our support
+              team.
             </p>
           </motion.div>
 
@@ -857,14 +912,13 @@ const Landing = () => {
               Stay Updated with Epik
             </h2>
             <p className="text-lg text-white/80 mb-8 font-body">
-              Get exclusive tips, platform updates, new service announcements, and special promotions delivered straight to your inbox. Join 10,000+ subscribers!
+              Get exclusive tips, platform updates, new service announcements, and special promotions delivered straight
+              to your inbox. Join 10,000+ subscribers!
             </p>
 
             <NewsletterForm />
 
-            <p className="text-sm text-white/60 mt-4 font-accent">
-              We respect your privacy. Unsubscribe anytime.
-            </p>
+            <p className="text-sm text-white/60 mt-4 font-accent">We respect your privacy. Unsubscribe anytime.</p>
           </motion.div>
         </div>
       </section>
@@ -893,7 +947,9 @@ const Landing = () => {
             </motion.div>
 
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold text-white mb-6">
-              Ready to Grow Your<br />Social Presence?
+              Ready to Grow Your
+              <br />
+              Social Presence?
             </h2>
             <p className="text-lg text-white/80 mb-10 font-body max-w-xl mx-auto">
               Join over 50,000 creators and businesses who trust Epik to boost their social media engagement.
@@ -906,7 +962,10 @@ const Landing = () => {
                 </Button>
               </Link>
               <Link to="/about">
-                <Button size="lg" className="font-heading bg-transparent text-white border-2 border-white/40 hover:bg-white/10 hover:border-white/60">
+                <Button
+                  size="lg"
+                  className="font-heading bg-transparent text-white border-2 border-white/40 hover:bg-white/10 hover:border-white/60"
+                >
                   Learn More About Us
                 </Button>
               </Link>
