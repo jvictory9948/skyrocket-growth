@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { ExternalLink, Loader2, RefreshCw } from "lucide-react";
+import { ExternalLink, Loader2, RefreshCw, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -99,7 +100,7 @@ const Orders = () => {
 
   return (
     <div className="p-6 lg:p-8">
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold text-foreground">Order History</h1>
           <p className="text-muted-foreground mt-1">
@@ -116,6 +117,13 @@ const Orders = () => {
           Refresh
         </Button>
       </div>
+
+      <Alert className="mb-6 border-amber-500/50 bg-amber-500/10">
+        <AlertCircle className="h-4 w-4 text-amber-500" />
+        <AlertDescription className="text-amber-700 dark:text-amber-400">
+          Orders older than 30 days are automatically cleared from history. Please save any important order details before this period.
+        </AlertDescription>
+      </Alert>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
