@@ -13,16 +13,21 @@ import {
   Plus,
   ShieldCheck,
   Receipt,
+  BarChart3,
+  Users,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrency } from "@/hooks/useCurrency";
+import { ThemeToggle } from "./ThemeToggle";
 import epikLogo from "@/assets/epik-logo.png";
 
 const navItems = [
   { name: "New Order", href: "/dashboard", icon: ShoppingCart },
   { name: "Orders", href: "/dashboard/orders", icon: History },
   { name: "Transactions", href: "/dashboard/transactions", icon: Receipt },
+  { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
+  { name: "Referrals", href: "/dashboard/referrals", icon: Users },
   { name: "Add Funds", href: "/dashboard/funds", icon: Wallet },
   { name: "Support", href: "/dashboard/support", icon: HelpCircle },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
@@ -53,7 +58,7 @@ export const DashboardSidebar = () => {
           <img src={epikLogo} alt="Epik" className="h-14 w-auto" />
         </Link>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 bg-accent rounded-full pl-3 pr-1 py-1">
             <span className="text-sm font-semibold text-foreground">
               {formatAmount(profile?.balance || 0)}
@@ -64,6 +69,7 @@ export const DashboardSidebar = () => {
               </Button>
             </Link>
           </div>
+          <ThemeToggle />
           <Button
             variant="ghost"
             size="icon"
@@ -207,15 +213,18 @@ export const DashboardSidebar = () => {
 
         {/* User & Logout */}
         <div className="p-4 border-t border-border">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-accent-foreground flex items-center justify-center text-primary-foreground font-semibold text-sm">
-              {profile?.username?.charAt(0).toUpperCase() || "U"}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-accent-foreground flex items-center justify-center text-primary-foreground font-semibold text-sm">
+                {profile?.username?.charAt(0).toUpperCase() || "U"}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">
+                  {profile?.username || "User"}
+                </p>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">
-                {profile?.username || "User"}
-              </p>
-            </div>
+            <ThemeToggle />
           </div>
           <Button
             variant="ghost"

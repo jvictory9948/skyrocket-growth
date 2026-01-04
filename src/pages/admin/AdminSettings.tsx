@@ -15,7 +15,8 @@ import {
   UserPlus,
   Shield,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  Users
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -56,6 +57,7 @@ const AdminSettings = () => {
   
   // Other settings
   const [priceMarkup, setPriceMarkup] = useState("0");
+  const [referralPercentage, setReferralPercentage] = useState("4");
   const [turnstileSiteKey, setTurnstileSiteKey] = useState("");
   const [reallySimpleApiKey, setReallySimpleApiKey] = useState("");
   
@@ -146,6 +148,7 @@ const AdminSettings = () => {
       setAdminActionBotToken(settings.find(s => s.setting_key === "telegram_admin_action_bot_token")?.setting_value || "");
       setAdminActionChatId(settings.find(s => s.setting_key === "telegram_admin_action_chat_id")?.setting_value || "");
       setPriceMarkup(settings.find(s => s.setting_key === "price_markup_percentage")?.setting_value || "0");
+      setReferralPercentage(settings.find(s => s.setting_key === "referral_percentage")?.setting_value || "4");
       setTurnstileSiteKey(settings.find(s => s.setting_key === "turnstile_site_key")?.setting_value || "");
       setReallySimpleApiKey(settings.find(s => s.setting_key === "reallysimplesocial_api_key")?.setting_value || "");
     }
@@ -162,6 +165,7 @@ const AdminSettings = () => {
         { setting_key: "telegram_admin_action_bot_token", setting_value: adminActionBotToken },
         { setting_key: "telegram_admin_action_chat_id", setting_value: adminActionChatId },
         { setting_key: "price_markup_percentage", setting_value: priceMarkup },
+        { setting_key: "referral_percentage", setting_value: referralPercentage },
         { setting_key: "turnstile_site_key", setting_value: turnstileSiteKey },
         { setting_key: "reallysimplesocial_api_key", setting_value: reallySimpleApiKey },
       ];
@@ -369,6 +373,46 @@ const AdminSettings = () => {
               <p className="text-sm text-muted-foreground">
                 <strong>Example:</strong> If a service costs ₦100 and markup is {priceMarkup || 0}%, 
                 users will see <strong>₦{(100 * (1 + (parseFloat(priceMarkup) || 0) / 100)).toFixed(2)}</strong>
+              </p>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Referral Commission Settings */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.025 }}
+          className="bg-card rounded-xl border border-border p-6"
+        >
+          <div className="flex items-center gap-3 mb-6">
+            <Users className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold text-foreground">Referral Program</h2>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="referralPercentage">Commission Percentage (%)</Label>
+              <Input
+                id="referralPercentage"
+                type="number"
+                min="0"
+                max="50"
+                step="0.5"
+                placeholder="e.g., 4"
+                value={referralPercentage}
+                onChange={(e) => setReferralPercentage(e.target.value)}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Referrers earn this percentage of each order placed by users they referred.
+              </p>
+            </div>
+
+            <div className="bg-secondary/50 rounded-lg p-4">
+              <p className="text-sm text-muted-foreground">
+                <strong>Example:</strong> If a referred user places a ₦1000 order and commission is {referralPercentage || 0}%, 
+                the referrer earns <strong>₦{(1000 * (parseFloat(referralPercentage) || 0) / 100).toFixed(2)}</strong>
               </p>
             </div>
           </div>
