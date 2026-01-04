@@ -299,7 +299,6 @@ const NewsletterForm = () => {
 const Landing = () => {
   const { user } = useAuth();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
     e.preventDefault();
@@ -307,7 +306,6 @@ const Landing = () => {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }
-    setMobileMenuOpen(false);
   };
 
   return (
@@ -323,11 +321,11 @@ const Landing = () => {
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ type: "spring", stiffness: 100, damping: 20 }}
-        className="fixed top-0 left-0 right-0 z-50 h-20 glass border-b border-border/50"
+        className="fixed top-0 left-0 right-0 z-50 h-16 md:h-20 glass border-b border-border/50"
       >
         <div className="container mx-auto h-full flex items-center justify-between px-4 lg:px-8">
           <a href="/" className="flex items-center gap-2">
-            <img src={epikLogo} alt="Epik" className="h-16 w-auto" />
+            <img src={epikLogo} alt="Epik" className="h-10 md:h-16 w-auto" />
           </a>
 
           <nav className="hidden md:flex items-center gap-8">
@@ -361,109 +359,34 @@ const Landing = () => {
             </a>
           </nav>
 
-          {/* Mobile menu button */}
-          <button
-            className="md:hidden p-2 text-muted-foreground hover:text-primary transition-colors"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle menu"
-          >
-            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
-
-          <div className="hidden md:flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
             <ThemeToggle />
             {user ? (
               <Link to="/dashboard">
-                <Button variant="default" size="sm">
-                  Dashboard <ArrowRight className="ml-1 h-4 w-4" />
+                <Button variant="default" size="sm" className="h-8 md:h-9 text-xs md:text-sm px-3 md:px-4">
+                  <span className="hidden sm:inline">Dashboard</span>
+                  <span className="sm:hidden">Go</span>
+                  <ArrowRight className="ml-1 h-3 w-3 md:h-4 md:w-4" />
                 </Button>
               </Link>
             ) : (
               <>
-                <Link to="/auth">
-                  <Button variant="ghost" size="sm">
+                <Link to="/auth" className="hidden sm:block">
+                  <Button variant="ghost" size="sm" className="h-8 md:h-9 text-xs md:text-sm">
                     Login
                   </Button>
                 </Link>
                 <Link to="/auth">
-                  <Button variant="hero" size="sm">
-                    Get Started <ArrowRight className="ml-1 h-4 w-4" />
+                  <Button variant="hero" size="sm" className="h-8 md:h-9 text-xs md:text-sm px-3 md:px-4">
+                    <span className="hidden sm:inline">Get Started</span>
+                    <span className="sm:hidden">Start</span>
+                    <ArrowRight className="ml-1 h-3 w-3 md:h-4 md:w-4" />
                   </Button>
                 </Link>
               </>
             )}
           </div>
         </div>
-
-        {/* Mobile menu dropdown */}
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-              className="md:hidden absolute top-full left-0 right-0 glass border-b border-border/50 overflow-hidden"
-            >
-              <nav className="flex flex-col p-4 gap-2">
-                <a
-                  href="#features"
-                  onClick={(e) => scrollToSection(e, 'features')}
-                  className="py-3 px-4 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-muted/50 rounded-lg transition-colors"
-                >
-                  Features
-                </a>
-                <a
-                  href="#how-it-works"
-                  onClick={(e) => scrollToSection(e, 'how-it-works')}
-                  className="py-3 px-4 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-muted/50 rounded-lg transition-colors"
-                >
-                  How It Works
-                </a>
-                <a
-                  href="#platforms"
-                  onClick={(e) => scrollToSection(e, 'platforms')}
-                  className="py-3 px-4 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-muted/50 rounded-lg transition-colors"
-                >
-                  Platforms
-                </a>
-                <a
-                  href="#faq"
-                  onClick={(e) => scrollToSection(e, 'faq')}
-                  className="py-3 px-4 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-muted/50 rounded-lg transition-colors"
-                >
-                  FAQ
-                </a>
-                <div className="border-t border-border/50 mt-2 pt-4 flex flex-col gap-2">
-                  <div className="flex items-center justify-between px-4">
-                    <span className="text-sm text-muted-foreground">Theme</span>
-                    <ThemeToggle />
-                  </div>
-                  {user ? (
-                    <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
-                      <Button variant="default" size="sm" className="w-full">
-                        Dashboard <ArrowRight className="ml-1 h-4 w-4" />
-                      </Button>
-                    </Link>
-                  ) : (
-                    <div className="flex flex-col gap-2">
-                      <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
-                        <Button variant="ghost" size="sm" className="w-full">
-                          Login
-                        </Button>
-                      </Link>
-                      <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
-                        <Button variant="hero" size="sm" className="w-full">
-                          Get Started <ArrowRight className="ml-1 h-4 w-4" />
-                        </Button>
-                      </Link>
-                    </div>
-                  )}
-                </div>
-              </nav>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </motion.header>
 
       {/* Hero */}
