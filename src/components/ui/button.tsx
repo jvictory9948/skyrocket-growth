@@ -11,13 +11,14 @@ const buttonVariants = cva(
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-primary/90 hover:-translate-y-0.5 hover:shadow-glow active:translate-y-0",
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+        outline: "border border-primary/30 bg-background text-foreground hover:bg-accent hover:text-accent-foreground hover:border-primary/50",
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
-        hero: "bg-gradient-to-r from-primary to-accent-foreground text-primary-foreground shadow-glow hover:-translate-y-1 hover:shadow-lg active:translate-y-0 transition-all duration-300",
-        glass: "bg-card/90 backdrop-blur-sm border border-border/50 text-foreground hover:bg-accent/50",
+        hero: "bg-gradient-primary text-primary-foreground shadow-glow hover:-translate-y-1 hover:shadow-glow-intense active:translate-y-0 transition-all duration-300",
+        glass: "bg-card/90 backdrop-blur-sm border border-primary/20 text-foreground hover:bg-accent/50 hover:border-primary/40",
         icon: "bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground rounded-full",
+        tertiary: "bg-tertiary text-tertiary-foreground hover:bg-tertiary/90 hover:-translate-y-0.5 active:translate-y-0",
       },
       size: {
         default: "h-10 px-4 py-2",
