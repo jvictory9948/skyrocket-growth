@@ -88,18 +88,18 @@ const Analytics = () => {
         .sort((a, b) => b.count - a.count)
         .slice(0, 5);
 
-      // Monthly data (last 6 months)
+      // Monthly data (last 4 months)
       const monthlyMap = new Map<string, { orders: number; spent: number }>();
       const now = new Date();
-      for (let i = 5; i >= 0; i--) {
+      for (let i = 3; i >= 0; i--) {
         const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const monthKey = date.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+        const monthKey = date.toLocaleDateString("en-US", { month: "short" });
         monthlyMap.set(monthKey, { orders: 0, spent: 0 });
       }
 
       orders?.forEach((order) => {
         const date = new Date(order.created_at);
-        const monthKey = date.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+        const monthKey = date.toLocaleDateString("en-US", { month: "short" });
         if (monthlyMap.has(monthKey)) {
           const existing = monthlyMap.get(monthKey)!;
           monthlyMap.set(monthKey, {
@@ -218,15 +218,28 @@ const Analytics = () => {
             <CardHeader className="pb-2 md:pb-4">
               <CardTitle className="text-base md:text-lg">Orders Over Time</CardTitle>
             </CardHeader>
-            <CardContent className="p-3 md:p-6 pt-0">
+            <CardContent className="p-2 md:p-6 pt-0">
               {stats.monthlyData.length > 0 ? (
-                <ChartContainer config={chartConfig} className="h-[200px] md:h-[300px]">
+                <ChartContainer config={chartConfig} className="h-[180px] md:h-[280px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={stats.monthlyData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-                      <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={10} tickMargin={8} />
-                      <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} width={30} />
+                    <BarChart data={stats.monthlyData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                      <XAxis 
+                        dataKey="month" 
+                        stroke="hsl(var(--muted-foreground))" 
+                        fontSize={11} 
+                        tickMargin={8}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <YAxis 
+                        stroke="hsl(var(--muted-foreground))" 
+                        fontSize={10} 
+                        width={25}
+                        axisLine={false}
+                        tickLine={false}
+                      />
                       <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="orders" fill="hsl(270, 80%, 60%)" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="orders" fill="hsl(270, 80%, 60%)" radius={[4, 4, 0, 0]} maxBarSize={50} />
                     </BarChart>
                   </ResponsiveContainer>
                 </ChartContainer>
