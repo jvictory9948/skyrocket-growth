@@ -7,6 +7,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCurrency } from "@/hooks/useCurrency";
 import { socialIcons } from "@/components/icons/SocialIcons";
 import { Button } from "@/components/ui/button";
+import { OrderReviewButton } from "@/components/OrderReviewButton";
+import { useServiceReviews } from "@/hooks/useServiceReviews";
 
 type OrderStatus = "pending" | "processing" | "completed" | "cancelled" | "refunded";
 
@@ -33,6 +35,7 @@ const statusStyles: Record<OrderStatus, string> = {
 const Orders = () => {
   const { user } = useAuth();
   const { formatAmount } = useCurrency();
+  const { getReviewForOrder } = useServiceReviews();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -132,6 +135,7 @@ const Orders = () => {
                     <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Qty</th>
                     <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Charge</th>
                     <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Status</th>
+                    <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Review</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -168,6 +172,16 @@ const Orders = () => {
                           >
                             {order.status}
                           </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <OrderReviewButton
+                            orderId={order.id}
+                            serviceId={order.external_order_id || order.id}
+                            serviceName={order.service}
+                            platform={order.platform}
+                            orderStatus={order.status}
+                            existingReview={getReviewForOrder(order.id)}
+                          />
                         </td>
                       </motion.tr>
                     );
@@ -215,14 +229,25 @@ const Orders = () => {
                           {order.quantity.toLocaleString()} units
                         </span>
                       </div>
-                      <a
-                        href={order.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-muted-foreground flex items-center gap-1 hover:text-primary"
-                      >
-                        View Link <ExternalLink className="h-3 w-3" />
-                      </a>
+                      <div className="flex items-center gap-3">
+                        <OrderReviewButton
+                          orderId={order.id}
+                          serviceId={order.external_order_id || order.id}
+                          serviceName={order.service}
+                          platform={order.platform}
+                          orderStatus={order.status}
+                          existingReview={getReviewForOrder(order.id)}
+                          variant="compact"
+                        />
+                        <a
+                          href={order.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-muted-foreground flex items-center gap-1 hover:text-primary"
+                        >
+                          View Link <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </div>
                     </div>
                   </motion.div>
                 );
