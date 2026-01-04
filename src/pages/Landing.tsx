@@ -394,7 +394,7 @@ const Landing = () => {
             Boost engagement on all major platforms
           </motion.p>
         </div>
-        <div className="flex items-center justify-center gap-12 flex-wrap px-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6 px-4 max-w-4xl mx-auto">
           {platforms.map((platform, index) => {
             const Icon = socialIcons[platform.id];
             return (
@@ -404,13 +404,13 @@ const Landing = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                whileHover={{ scale: 1.1, y: -5 }}
-                className="flex items-center gap-3 text-muted-foreground hover:text-primary transition-all duration-300 cursor-pointer group"
+                whileHover={{ scale: 1.05, y: -3 }}
+                className="flex flex-col items-center gap-2 p-4 rounded-xl bg-card/50 border border-border/50 hover:border-primary/30 hover:bg-card transition-all duration-300 cursor-pointer group"
               >
-                <div className={cn("p-3 rounded-xl bg-gradient-to-br opacity-80 group-hover:opacity-100 transition-opacity", platform.color)}>
-                  {Icon && <Icon className="h-6 w-6 text-white" />}
+                <div className={cn("p-3 rounded-xl bg-gradient-to-br opacity-90 group-hover:opacity-100 transition-opacity", platform.color)}>
+                  {Icon && <Icon className="h-5 w-5 md:h-6 md:w-6 text-white" />}
                 </div>
-                <span className="text-base font-heading font-medium">{platform.name}</span>
+                <span className="text-sm font-heading font-medium text-foreground">{platform.name}</span>
               </motion.div>
             );
           })}
