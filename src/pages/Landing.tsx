@@ -778,7 +778,7 @@ const Landing = () => {
             viewport={{ once: true }}
             className="text-center"
           >
-            <Link to={user ? "/dashboard/new-order" : "/auth"}>
+            <Link to={user ? "/dashboard" : "/auth"}>
               <Button variant="hero" size="lg" className="group">
                 View All Services
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
