@@ -610,11 +610,16 @@ const NewOrder = () => {
         </div>
         
         {/* Video Sidebar - Desktop only */}
-        <div className="hidden xl:block w-[380px] flex-shrink-0">
+        <div className="hidden xl:block w-[420px] flex-shrink-0">
           <div className="sticky top-8">
             <HowToOrderVideo variant="sidebar" />
           </div>
         </div>
+      </div>
+
+      {/* Video - Mobile/Tablet (below form, matches card styling) */}
+      <div className="xl:hidden mt-6 max-w-2xl">
+        <HowToOrderVideo variant="sidebar" />
       </div>
     </div>
   );
