@@ -18,6 +18,8 @@ import {
   Eye,
   Mail,
   Send,
+  Menu,
+  X,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -297,6 +299,16 @@ const NewsletterForm = () => {
 const Landing = () => {
   const { user } = useAuth();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
+    e.preventDefault();
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+    setMobileMenuOpen(false);
+  };
 
   return (
     <div className="min-h-screen bg-background overflow-hidden relative">
@@ -321,28 +333,44 @@ const Landing = () => {
           <nav className="hidden md:flex items-center gap-8">
             <a
               href="#features"
+              onClick={(e) => scrollToSection(e, 'features')}
               className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
             >
               Features
             </a>
             <a
               href="#how-it-works"
+              onClick={(e) => scrollToSection(e, 'how-it-works')}
               className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
             >
               How It Works
             </a>
             <a
               href="#platforms"
+              onClick={(e) => scrollToSection(e, 'platforms')}
               className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
             >
               Platforms
             </a>
-            <a href="#faq" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+            <a
+              href="#faq"
+              onClick={(e) => scrollToSection(e, 'faq')}
+              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+            >
               FAQ
             </a>
           </nav>
 
-          <div className="flex items-center gap-3">
+          {/* Mobile menu button */}
+          <button
+            className="md:hidden p-2 text-muted-foreground hover:text-primary transition-colors"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+
+          <div className="hidden md:flex items-center gap-3">
             <ThemeToggle />
             {user ? (
               <Link to="/dashboard">
@@ -366,6 +394,76 @@ const Landing = () => {
             )}
           </div>
         </div>
+
+        {/* Mobile menu dropdown */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="md:hidden absolute top-full left-0 right-0 glass border-b border-border/50 overflow-hidden"
+            >
+              <nav className="flex flex-col p-4 gap-2">
+                <a
+                  href="#features"
+                  onClick={(e) => scrollToSection(e, 'features')}
+                  className="py-3 px-4 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-muted/50 rounded-lg transition-colors"
+                >
+                  Features
+                </a>
+                <a
+                  href="#how-it-works"
+                  onClick={(e) => scrollToSection(e, 'how-it-works')}
+                  className="py-3 px-4 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-muted/50 rounded-lg transition-colors"
+                >
+                  How It Works
+                </a>
+                <a
+                  href="#platforms"
+                  onClick={(e) => scrollToSection(e, 'platforms')}
+                  className="py-3 px-4 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-muted/50 rounded-lg transition-colors"
+                >
+                  Platforms
+                </a>
+                <a
+                  href="#faq"
+                  onClick={(e) => scrollToSection(e, 'faq')}
+                  className="py-3 px-4 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-muted/50 rounded-lg transition-colors"
+                >
+                  FAQ
+                </a>
+                <div className="border-t border-border/50 mt-2 pt-4 flex flex-col gap-2">
+                  <div className="flex items-center justify-between px-4">
+                    <span className="text-sm text-muted-foreground">Theme</span>
+                    <ThemeToggle />
+                  </div>
+                  {user ? (
+                    <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="default" size="sm" className="w-full">
+                        Dashboard <ArrowRight className="ml-1 h-4 w-4" />
+                      </Button>
+                    </Link>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
+                        <Button variant="ghost" size="sm" className="w-full">
+                          Login
+                        </Button>
+                      </Link>
+                      <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
+                        <Button variant="hero" size="sm" className="w-full">
+                          Get Started <ArrowRight className="ml-1 h-4 w-4" />
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              </nav>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.header>
 
       {/* Hero */}
