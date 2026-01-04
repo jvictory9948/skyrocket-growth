@@ -103,13 +103,6 @@ const Transactions = () => {
         </Button>
       </div>
 
-      <Alert className="mb-6 border-amber-500/50 bg-amber-500/10">
-        <AlertCircle className="h-4 w-4 text-amber-500" />
-        <AlertDescription className="text-amber-700 dark:text-amber-400">
-          Transactions older than 30 days are automatically cleared from history. Please save any important records before this period.
-        </AlertDescription>
-      </Alert>
-
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -226,6 +219,13 @@ const Transactions = () => {
           </>
         )}
       </motion.div>
+
+      <Alert className="mt-6 border-amber-500/50 bg-amber-500/10">
+        <AlertCircle className="h-4 w-4 text-amber-500" />
+        <AlertDescription className="text-amber-700 dark:text-amber-400">
+          Transactions older than 30 days are automatically cleared from history. Please save any important records before this period.
+        </AlertDescription>
+      </Alert>
     </div>
   );
 };

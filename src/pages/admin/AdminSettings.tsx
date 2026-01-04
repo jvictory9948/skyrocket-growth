@@ -62,6 +62,7 @@ const AdminSettings = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState<string | null>(null);
   const [isCleaningData, setIsCleaningData] = useState(false);
+  const [cleanupDays, setCleanupDays] = useState(30);
 
   // Fetch settings
   const { data: settings, isLoading: settingsLoading } = useQuery({
@@ -109,28 +110,28 @@ const AdminSettings = () => {
     },
   });
 
-  // Fetch old data stats for cleanup
+  // Fetch old data stats for cleanup based on cleanupDays
   const { data: oldDataStats, isLoading: oldDataLoading, refetch: refetchOldData } = useQuery({
-    queryKey: ["admin-old-data-stats"],
+    queryKey: ["admin-old-data-stats", cleanupDays],
     queryFn: async () => {
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - cleanupDays);
 
       const [ordersRes, transactionsRes] = await Promise.all([
         supabase
           .from("orders")
           .select("id", { count: "exact" })
-          .lt("created_at", thirtyDaysAgo.toISOString()),
+          .lt("created_at", cutoffDate.toISOString()),
         supabase
           .from("transactions")
           .select("id", { count: "exact" })
-          .lt("created_at", thirtyDaysAgo.toISOString()),
+          .lt("created_at", cutoffDate.toISOString()),
       ]);
 
       return {
         oldOrders: ordersRes.count || 0,
         oldTransactions: transactionsRes.count || 0,
-        cutoffDate: thirtyDaysAgo,
+        cutoffDate,
       };
     },
   });
@@ -269,14 +270,14 @@ const AdminSettings = () => {
   const handleCleanOldData = async () => {
     setIsCleaningData(true);
     try {
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - cleanupDays);
 
       // Delete old orders
       const { error: ordersError } = await supabase
         .from("orders")
         .delete()
-        .lt("created_at", thirtyDaysAgo.toISOString());
+        .lt("created_at", cutoffDate.toISOString());
 
       if (ordersError) throw ordersError;
 
@@ -284,13 +285,13 @@ const AdminSettings = () => {
       const { error: transactionsError } = await supabase
         .from("transactions")
         .delete()
-        .lt("created_at", thirtyDaysAgo.toISOString());
+        .lt("created_at", cutoffDate.toISOString());
 
       if (transactionsError) throw transactionsError;
 
       toast({
         title: "Data cleaned",
-        description: "All orders and transactions older than 30 days have been deleted.",
+        description: `All orders and transactions older than ${cleanupDays} days have been deleted.`,
       });
       
       refetchOldData();
@@ -662,7 +663,7 @@ const AdminSettings = () => {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <Trash2 className="h-5 w-5 text-primary" />
-              <h2 className="text-lg font-semibold text-foreground">Data Cleanup (30+ Days)</h2>
+              <h2 className="text-lg font-semibold text-foreground">Data Cleanup</h2>
             </div>
           </div>
 
@@ -671,12 +672,40 @@ const AdminSettings = () => {
               <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm text-amber-700 dark:text-amber-400 font-medium">
-                  Automatic Cleanup Policy
+                  Manual & Automatic Cleanup
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Orders and transactions older than 30 days should be periodically cleaned to maintain database performance. 
-                  Users are notified of this policy on their order and transaction history pages.
+                  Orders and transactions older than the selected duration can be cleaned manually. 
+                  Users are notified that data older than 30 days may be cleared automatically.
                 </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Duration selector */}
+          <div className="mb-6">
+            <Label htmlFor="cleanupDays" className="text-sm font-medium">Data older than (days)</Label>
+            <div className="flex items-center gap-4 mt-2">
+              <Input
+                id="cleanupDays"
+                type="number"
+                min="1"
+                max="365"
+                value={cleanupDays}
+                onChange={(e) => setCleanupDays(Math.max(1, parseInt(e.target.value) || 30))}
+                className="w-24"
+              />
+              <div className="flex gap-2">
+                {[7, 14, 30, 60, 90].map((days) => (
+                  <Button
+                    key={days}
+                    variant={cleanupDays === days ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCleanupDays(days)}
+                  >
+                    {days}d
+                  </Button>
+                ))}
               </div>
             </div>
           </div>
@@ -689,11 +718,11 @@ const AdminSettings = () => {
             <div className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="bg-secondary/50 rounded-lg p-4">
-                  <p className="text-sm text-muted-foreground mb-1">Old Orders (30+ days)</p>
+                  <p className="text-sm text-muted-foreground mb-1">Old Orders ({cleanupDays}+ days)</p>
                   <p className="text-2xl font-bold text-foreground">{oldDataStats?.oldOrders || 0}</p>
                 </div>
                 <div className="bg-secondary/50 rounded-lg p-4">
-                  <p className="text-sm text-muted-foreground mb-1">Old Transactions (30+ days)</p>
+                  <p className="text-sm text-muted-foreground mb-1">Old Transactions ({cleanupDays}+ days)</p>
                   <p className="text-2xl font-bold text-foreground">{oldDataStats?.oldTransactions || 0}</p>
                 </div>
               </div>
@@ -718,8 +747,8 @@ const AdminSettings = () => {
                     <AlertDialogDescription>
                       This will permanently delete:
                       <ul className="list-disc list-inside mt-2 space-y-1">
-                        <li><strong>{oldDataStats?.oldOrders || 0}</strong> orders older than 30 days</li>
-                        <li><strong>{oldDataStats?.oldTransactions || 0}</strong> transactions older than 30 days</li>
+                        <li><strong>{oldDataStats?.oldOrders || 0}</strong> orders older than {cleanupDays} days</li>
+                        <li><strong>{oldDataStats?.oldTransactions || 0}</strong> transactions older than {cleanupDays} days</li>
                       </ul>
                       <p className="mt-2">This action cannot be undone.</p>
                     </AlertDialogDescription>
