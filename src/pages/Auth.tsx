@@ -1,18 +1,35 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
-import { Loader2, Mail, Lock, User, ArrowRight, ShieldCheck } from "lucide-react";
+import { Loader2, Mail, Lock, User, ArrowRight, ShieldCheck, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Turnstile, TurnstileInstance } from "@marsidev/react-turnstile";
+import epikLogo from "@/assets/epik-logo.png";
 
 const emailSchema = z.string().email("Please enter a valid email");
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
 const usernameSchema = z.string().min(2, "Username must be at least 2 characters");
+
+// Password strength calculation
+const getPasswordStrength = (password: string): { score: number; label: string; color: string } => {
+  let score = 0;
+  if (password.length >= 6) score++;
+  if (password.length >= 8) score++;
+  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+  if (/\d/.test(password)) score++;
+  if (/[^a-zA-Z0-9]/.test(password)) score++;
+
+  if (score <= 1) return { score: 1, label: "Weak", color: "bg-red-500" };
+  if (score <= 2) return { score: 2, label: "Fair", color: "bg-orange-500" };
+  if (score <= 3) return { score: 3, label: "Good", color: "bg-yellow-500" };
+  if (score <= 4) return { score: 4, label: "Strong", color: "bg-green-500" };
+  return { score: 5, label: "Very Strong", color: "bg-emerald-500" };
+};
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -22,10 +39,13 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; username?: string; captcha?: string }>({});
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileSiteKey, setTurnstileSiteKey] = useState<string>("");
   const turnstileRef = useRef<TurnstileInstance>(null);
+
+  const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
 
   useEffect(() => {
     if (user && !loading) {
@@ -161,178 +181,296 @@ const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-accent/20 rounded-full blur-3xl" />
+    <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden px-4">
+      {/* Background glows */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/15 rounded-full blur-[100px]" />
+        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-primary/10 rounded-full blur-[80px]" />
       </div>
 
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative z-10 w-full max-w-md mx-4"
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="relative z-10 w-full max-w-md"
       >
         {/* Logo */}
-        <div className="text-center mb-8">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.1 }}
+          className="text-center mb-6"
+        >
           <a href="/" className="inline-block">
-            <span className="text-4xl font-extrabold text-foreground tracking-tight">
-              E<span className="text-primary">p</span>ik
-            </span>
+            <img src={epikLogo} alt="Epik" className="h-16 mx-auto" />
           </a>
-          <p className="text-muted-foreground mt-2">
-            {isLogin ? "Welcome back" : "Create your account"}
-          </p>
-        </div>
+          <motion.p 
+            key={isLogin ? "login" : "signup"}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-muted-foreground mt-3 text-sm"
+          >
+            {isLogin ? "Welcome back! Sign in to continue" : "Create your account to get started"}
+          </motion.p>
+        </motion.div>
 
         {/* Form Card */}
-        <div className="bg-card rounded-2xl shadow-card border border-border p-8">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-card/80 backdrop-blur-sm rounded-2xl shadow-lg border border-border/50 p-6"
+        >
           {/* Tabs */}
-          <div className="flex gap-2 mb-6">
-            <button
+          <div className="flex gap-1 mb-5 p-1 bg-secondary/50 rounded-xl">
+            <motion.button
               onClick={() => {
                 setIsLogin(true);
                 setErrors({});
                 setTurnstileToken(null);
               }}
-              className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
-                isLogin
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-muted-foreground hover:bg-accent"
+              className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all relative ${
+                isLogin ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Login
-            </button>
-            <button
+              {isLogin && (
+                <motion.div
+                  layoutId="activeTab"
+                  className="absolute inset-0 bg-primary rounded-lg"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <span className="relative z-10">Login</span>
+            </motion.button>
+            <motion.button
               onClick={() => {
                 setIsLogin(false);
                 setErrors({});
                 setTurnstileToken(null);
               }}
-              className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
-                !isLogin
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-muted-foreground hover:bg-accent"
+              className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all relative ${
+                !isLogin ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Sign Up
-            </button>
+              {!isLogin && (
+                <motion.div
+                  layoutId="activeTab"
+                  className="absolute inset-0 bg-primary rounded-lg"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <span className="relative z-10">Sign Up</span>
+            </motion.button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Username (signup only) */}
-            {!isLogin && (
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Username
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Your username"
-                    className="pl-10 h-12 bg-secondary border-border focus:ring-2 focus:ring-primary"
-                  />
-                </div>
-                {errors.username && (
-                  <p className="text-destructive text-xs mt-1">{errors.username}</p>
-                )}
-              </div>
-            )}
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <AnimatePresence mode="wait">
+              {/* Username (signup only) */}
+              {!isLogin && (
+                <motion.div
+                  key="username"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                    Username
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      placeholder="Your username"
+                      className="pl-9 h-10 bg-secondary/50 border-border/50 focus:border-primary focus:ring-1 focus:ring-primary/20 text-sm rounded-xl"
+                    />
+                  </div>
+                  {errors.username && (
+                    <motion.p 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-destructive text-xs mt-1"
+                    >
+                      {errors.username}
+                    </motion.p>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <label className="block text-xs font-medium text-muted-foreground mb-1.5">
                 Email
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="pl-10 h-12 bg-secondary border-border focus:ring-2 focus:ring-primary"
+                  className="pl-9 h-10 bg-secondary/50 border-border/50 focus:border-primary focus:ring-1 focus:ring-primary/20 text-sm rounded-xl"
                 />
               </div>
               {errors.email && (
-                <p className="text-destructive text-xs mt-1">{errors.email}</p>
+                <motion.p 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-destructive text-xs mt-1"
+                >
+                  {errors.email}
+                </motion.p>
               )}
-            </div>
+            </motion.div>
 
             {/* Password */}
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <label className="block text-xs font-medium text-muted-foreground mb-1.5">
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="pl-10 h-12 bg-secondary border-border focus:ring-2 focus:ring-primary"
+                  className="pl-9 pr-10 h-10 bg-secondary/50 border-border/50 focus:border-primary focus:ring-1 focus:ring-primary/20 text-sm rounded-xl"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
               {errors.password && (
-                <p className="text-destructive text-xs mt-1">{errors.password}</p>
+                <motion.p 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-destructive text-xs mt-1"
+                >
+                  {errors.password}
+                </motion.p>
               )}
-            </div>
+
+              {/* Password Strength Bar (signup only) */}
+              <AnimatePresence>
+                {!isLogin && password.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-2"
+                  >
+                    <div className="flex gap-1 mb-1">
+                      {[1, 2, 3, 4, 5].map((level) => (
+                        <motion.div
+                          key={level}
+                          initial={{ scaleX: 0 }}
+                          animate={{ scaleX: 1 }}
+                          transition={{ delay: level * 0.05 }}
+                          className={`h-1 flex-1 rounded-full transition-colors ${
+                            level <= passwordStrength.score ? passwordStrength.color : "bg-muted"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <p className={`text-xs ${passwordStrength.color.replace('bg-', 'text-')}`}>
+                      {passwordStrength.label}
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
 
             {/* Turnstile Captcha (signup only) */}
-            {!isLogin && turnstileSiteKey && (
-              <div className="pt-2">
-                <div className="flex items-center gap-2 mb-2 text-sm text-muted-foreground">
-                  <ShieldCheck className="h-4 w-4" />
-                  <span>Security verification</span>
-                </div>
-                <Turnstile
-                  ref={turnstileRef}
-                  siteKey={turnstileSiteKey}
-                  onSuccess={(token) => {
-                    setTurnstileToken(token);
-                    setErrors((prev) => ({ ...prev, captcha: undefined }));
-                  }}
-                  onError={() => {
-                    setTurnstileToken(null);
-                    setErrors((prev) => ({ ...prev, captcha: "Verification failed. Please try again." }));
-                  }}
-                  onExpire={() => {
-                    setTurnstileToken(null);
-                  }}
-                  options={{
-                    theme: "auto",
-                  }}
-                />
-                {errors.captcha && (
-                  <p className="text-destructive text-xs mt-1">{errors.captcha}</p>
-                )}
-              </div>
-            )}
-
-            <Button
-              type="submit"
-              variant="hero"
-              size="lg"
-              className="w-full mt-6"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <>
-                  {isLogin ? "Login" : "Create Account"}
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </>
+            <AnimatePresence>
+              {!isLogin && turnstileSiteKey && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="pt-1"
+                >
+                  <div className="flex items-center gap-1.5 mb-2 text-xs text-muted-foreground">
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    <span>Security verification</span>
+                  </div>
+                  <Turnstile
+                    ref={turnstileRef}
+                    siteKey={turnstileSiteKey}
+                    onSuccess={(token) => {
+                      setTurnstileToken(token);
+                      setErrors((prev) => ({ ...prev, captcha: undefined }));
+                    }}
+                    onError={() => {
+                      setTurnstileToken(null);
+                      setErrors((prev) => ({ ...prev, captcha: "Verification failed. Please try again." }));
+                    }}
+                    onExpire={() => {
+                      setTurnstileToken(null);
+                    }}
+                    options={{
+                      theme: "auto",
+                    }}
+                  />
+                  {errors.captcha && (
+                    <motion.p 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-destructive text-xs mt-1"
+                    >
+                      {errors.captcha}
+                    </motion.p>
+                  )}
+                </motion.div>
               )}
-            </Button>
-          </form>
-        </div>
+            </AnimatePresence>
 
-        <p className="text-center text-sm text-muted-foreground mt-6">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <Button
+                type="submit"
+                variant="hero"
+                size="default"
+                className="w-full mt-4 h-10 text-sm font-medium rounded-xl"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    {isLogin ? "Sign In" : "Create Account"}
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </>
+                )}
+              </Button>
+            </motion.div>
+          </form>
+        </motion.div>
+
+        <motion.p 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+          className="text-center text-xs text-muted-foreground mt-4"
+        >
           {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
           <button
             onClick={() => setIsLogin(!isLogin)}
@@ -340,7 +478,7 @@ const Auth = () => {
           >
             {isLogin ? "Sign up" : "Login"}
           </button>
-        </p>
+        </motion.p>
       </motion.div>
     </div>
   );
