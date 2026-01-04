@@ -143,17 +143,17 @@ const Analytics = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center">
-                  <ShoppingCart className="h-6 w-6 text-primary" />
+            <CardContent className="p-4 md:p-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+                <div className="h-10 w-10 md:h-12 md:w-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                  <ShoppingCart className="h-5 w-5 md:h-6 md:w-6 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Orders</p>
-                  <p className="text-2xl font-bold text-foreground">{stats.totalOrders}</p>
+                  <p className="text-xs md:text-sm text-muted-foreground">Total Orders</p>
+                  <p className="text-xl md:text-2xl font-bold text-foreground">{stats.totalOrders}</p>
                 </div>
               </div>
             </CardContent>
@@ -162,14 +162,14 @@ const Analytics = () => {
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 bg-tertiary/10 rounded-xl flex items-center justify-center">
-                  <DollarSign className="h-6 w-6 text-tertiary" />
+            <CardContent className="p-4 md:p-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+                <div className="h-10 w-10 md:h-12 md:w-12 bg-tertiary/10 rounded-xl flex items-center justify-center">
+                  <DollarSign className="h-5 w-5 md:h-6 md:w-6 text-tertiary" />
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Spent</p>
-                  <p className="text-2xl font-bold text-foreground">{formatAmount(stats.totalSpent)}</p>
+                <div className="min-w-0">
+                  <p className="text-xs md:text-sm text-muted-foreground">Total Spent</p>
+                  <p className="text-lg md:text-2xl font-bold text-foreground truncate">{formatAmount(stats.totalSpent)}</p>
                 </div>
               </div>
             </CardContent>
@@ -178,14 +178,14 @@ const Analytics = () => {
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 bg-success/10 rounded-xl flex items-center justify-center">
-                  <BarChart3 className="h-6 w-6 text-success" />
+            <CardContent className="p-4 md:p-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+                <div className="h-10 w-10 md:h-12 md:w-12 bg-success/10 rounded-xl flex items-center justify-center">
+                  <BarChart3 className="h-5 w-5 md:h-6 md:w-6 text-success" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Platforms Used</p>
-                  <p className="text-2xl font-bold text-foreground">{stats.platformStats.length}</p>
+                  <p className="text-xs md:text-sm text-muted-foreground">Platforms</p>
+                  <p className="text-xl md:text-2xl font-bold text-foreground">{stats.platformStats.length}</p>
                 </div>
               </div>
             </CardContent>
@@ -194,14 +194,14 @@ const Analytics = () => {
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 bg-accent rounded-xl flex items-center justify-center">
-                  <TrendingUp className="h-6 w-6 text-accent-foreground" />
+            <CardContent className="p-4 md:p-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+                <div className="h-10 w-10 md:h-12 md:w-12 bg-accent rounded-xl flex items-center justify-center">
+                  <TrendingUp className="h-5 w-5 md:h-6 md:w-6 text-accent-foreground" />
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Avg per Order</p>
-                  <p className="text-2xl font-bold text-foreground">
+                <div className="min-w-0">
+                  <p className="text-xs md:text-sm text-muted-foreground">Avg/Order</p>
+                  <p className="text-lg md:text-2xl font-bold text-foreground truncate">
                     {stats.totalOrders > 0 ? formatAmount(stats.totalSpent / stats.totalOrders) : formatAmount(0)}
                   </p>
                 </div>
@@ -211,27 +211,27 @@ const Analytics = () => {
         </motion.div>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         {/* Orders Over Time */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Orders Over Time</CardTitle>
+            <CardHeader className="pb-2 md:pb-4">
+              <CardTitle className="text-base md:text-lg">Orders Over Time</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3 md:p-6 pt-0">
               {stats.monthlyData.length > 0 ? (
-                <ChartContainer config={chartConfig} className="h-[300px]">
+                <ChartContainer config={chartConfig} className="h-[200px] md:h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={stats.monthlyData}>
-                      <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                      <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                    <BarChart data={stats.monthlyData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                      <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={10} tickMargin={8} />
+                      <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} width={30} />
                       <ChartTooltip content={<ChartTooltipContent />} />
                       <Bar dataKey="orders" fill="hsl(270, 80%, 60%)" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </ChartContainer>
               ) : (
-                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                <div className="h-[200px] md:h-[300px] flex items-center justify-center text-muted-foreground text-sm">
                   No order data yet
                 </div>
               )}
@@ -242,13 +242,13 @@ const Analytics = () => {
         {/* Spending by Platform */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Spending by Platform</CardTitle>
+            <CardHeader className="pb-2 md:pb-4">
+              <CardTitle className="text-base md:text-lg">Spending by Platform</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3 md:p-6 pt-0">
               {stats.platformStats.length > 0 ? (
-                <div className="flex flex-col lg:flex-row items-center gap-4">
-                  <div className="h-[200px] w-[200px]">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="h-[150px] w-[150px] md:h-[180px] md:w-[180px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
@@ -257,7 +257,7 @@ const Analytics = () => {
                           nameKey="platform"
                           cx="50%"
                           cy="50%"
-                          outerRadius={80}
+                          outerRadius={60}
                           label={false}
                         >
                           {stats.platformStats.map((_, index) => (
@@ -267,23 +267,23 @@ const Analytics = () => {
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
-                  <div className="flex-1 space-y-2">
+                  <div className="w-full space-y-2">
                     {stats.platformStats.map((platform, index) => (
                       <div key={platform.platform} className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <div
-                            className="h-3 w-3 rounded-full"
+                            className="h-3 w-3 rounded-full flex-shrink-0"
                             style={{ backgroundColor: COLORS[index % COLORS.length] }}
                           />
-                          <span className="text-sm capitalize text-foreground">{platform.platform}</span>
+                          <span className="text-xs md:text-sm capitalize text-foreground">{platform.platform}</span>
                         </div>
-                        <span className="text-sm font-medium text-foreground">{formatAmount(platform.spent)}</span>
+                        <span className="text-xs md:text-sm font-medium text-foreground">{formatAmount(platform.spent)}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               ) : (
-                <div className="h-[200px] flex items-center justify-center text-muted-foreground">
+                <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm">
                   No platform data yet
                 </div>
               )}
@@ -294,21 +294,21 @@ const Analytics = () => {
         {/* Most Ordered Services */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} className="lg:col-span-2">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Most Ordered Services</CardTitle>
+            <CardHeader className="pb-2 md:pb-4">
+              <CardTitle className="text-base md:text-lg">Most Ordered Services</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3 md:p-6 pt-0">
               {stats.serviceStats.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-3 md:space-y-4">
                   {stats.serviceStats.map((service, index) => (
-                    <div key={service.service} className="flex items-center gap-4">
-                      <span className="text-sm font-medium text-muted-foreground w-6">#{index + 1}</span>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm text-foreground">{service.service}</span>
-                          <span className="text-sm font-medium text-foreground">{service.count} orders</span>
+                    <div key={service.service} className="flex items-center gap-2 md:gap-4">
+                      <span className="text-xs md:text-sm font-medium text-muted-foreground w-5 md:w-6">#{index + 1}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1 gap-2">
+                          <span className="text-xs md:text-sm text-foreground truncate">{service.service}</span>
+                          <span className="text-xs md:text-sm font-medium text-foreground whitespace-nowrap">{service.count} orders</span>
                         </div>
-                        <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                        <div className="h-1.5 md:h-2 bg-secondary rounded-full overflow-hidden">
                           <div
                             className="h-full bg-primary rounded-full transition-all"
                             style={{ width: `${(service.count / stats.serviceStats[0].count) * 100}%` }}
@@ -319,7 +319,7 @@ const Analytics = () => {
                   ))}
                 </div>
               ) : (
-                <div className="h-[150px] flex items-center justify-center text-muted-foreground">
+                <div className="h-[120px] md:h-[150px] flex items-center justify-center text-muted-foreground text-sm">
                   No service data yet
                 </div>
               )}
