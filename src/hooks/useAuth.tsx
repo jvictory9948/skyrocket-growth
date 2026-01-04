@@ -142,6 +142,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       email,
       password,
     });
+    
+    // Track user login with IP and location (fire and forget)
+    if (!error) {
+      supabase.functions.invoke("track-user-login").catch(console.error);
+    }
+    
     return { error };
   };
 
