@@ -232,7 +232,7 @@ const Orders = () => {
         )}
       </motion.div>
 
-      <Alert className="mb-6 border-amber-500/50 bg-amber-500/10">
+      <Alert className="mt-6 border-amber-500/50 bg-amber-500/10">
         <AlertCircle className="h-4 w-4 text-amber-500" />
         <AlertDescription className="text-amber-700 dark:text-amber-400">
           Orders older than 30 days are automatically cleared from history. Please save any important order details
