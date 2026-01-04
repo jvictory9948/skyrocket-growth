@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 import { CurrencyProvider } from "@/hooks/useCurrency";
 import Landing from "./pages/Landing";
@@ -21,6 +22,8 @@ import Transactions from "./pages/dashboard/Transactions";
 import Funds from "./pages/dashboard/Funds";
 import Support from "./pages/dashboard/Support";
 import Settings from "./pages/dashboard/Settings";
+import Analytics from "./pages/dashboard/Analytics";
+import Referrals from "./pages/dashboard/Referrals";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminOrders from "./pages/admin/AdminOrders";
@@ -35,47 +38,51 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <CurrencyProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Landing />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/blog" element={<Blog />} />
-              <Route path="/careers" element={<Careers />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/refund" element={<Refund />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/suspended" element={<Suspended />} />
-              <Route path="/dashboard" element={<DashboardLayout />}>
-              <Route index element={<NewOrder />} />
-                <Route path="orders" element={<Orders />} />
-                <Route path="transactions" element={<Transactions />} />
-                <Route path="funds" element={<Funds />} />
-                <Route path="support" element={<Support />} />
-                <Route path="settings" element={<Settings />} />
-                <Route path="admin" element={<AdminDashboard />} />
-                <Route path="admin/users" element={<AdminUsers />} />
-                <Route path="admin/orders" element={<AdminOrders />} />
-                <Route path="admin/transactions" element={<AdminTransactions />} />
-                <Route path="admin/tickets" element={<AdminTickets />} />
-                <Route path="admin/settings" element={<AdminSettings />} />
-                <Route path="admin/social-links" element={<AdminSocialLinks />} />
-                <Route path="admin/payment-methods" element={<AdminPaymentMethods />} />
-                <Route path="admin/refunds" element={<AdminRefunds />} />
-              </Route>
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </CurrencyProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+  <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <CurrencyProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Landing />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/blog" element={<Blog />} />
+                <Route path="/careers" element={<Careers />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/refund" element={<Refund />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/suspended" element={<Suspended />} />
+                <Route path="/dashboard" element={<DashboardLayout />}>
+                <Route index element={<NewOrder />} />
+                  <Route path="orders" element={<Orders />} />
+                  <Route path="transactions" element={<Transactions />} />
+                  <Route path="funds" element={<Funds />} />
+                  <Route path="support" element={<Support />} />
+                  <Route path="settings" element={<Settings />} />
+                  <Route path="analytics" element={<Analytics />} />
+                  <Route path="referrals" element={<Referrals />} />
+                  <Route path="admin" element={<AdminDashboard />} />
+                  <Route path="admin/users" element={<AdminUsers />} />
+                  <Route path="admin/orders" element={<AdminOrders />} />
+                  <Route path="admin/transactions" element={<AdminTransactions />} />
+                  <Route path="admin/tickets" element={<AdminTickets />} />
+                  <Route path="admin/settings" element={<AdminSettings />} />
+                  <Route path="admin/social-links" element={<AdminSocialLinks />} />
+                  <Route path="admin/payment-methods" element={<AdminPaymentMethods />} />
+                  <Route path="admin/refunds" element={<AdminRefunds />} />
+                </Route>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </CurrencyProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  </ThemeProvider>
 );
 
 export default App;

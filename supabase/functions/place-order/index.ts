@@ -189,6 +189,55 @@ serve(async (req) => {
         insertedOrderVar = insertedOrder;
         console.log('Inserted order', insertedOrderVar);
 
+        // Process referral commission
+        try {
+          // Check if user was referred
+          const { data: userProfile } = await serviceClient
+            .from('profiles')
+            .select('referred_by')
+            .eq('id', user.id)
+            .single();
+
+          if (userProfile?.referred_by) {
+            // Get referral percentage from settings
+            const { data: refPercentRow } = await serviceClient
+              .from('admin_settings')
+              .select('setting_value')
+              .eq('setting_key', 'referral_percentage')
+              .maybeSingle();
+
+            const refPercent = refPercentRow?.setting_value ? parseFloat(refPercentRow.setting_value) : 4;
+            const commission = totalCharge * (refPercent / 100);
+
+            if (commission > 0) {
+              // Add commission to referrer's balance
+              const { data: referrerProfile } = await serviceClient
+                .from('profiles')
+                .select('balance')
+                .eq('id', userProfile.referred_by)
+                .single();
+
+              if (referrerProfile) {
+                await serviceClient
+                  .from('profiles')
+                  .update({ balance: Number(referrerProfile.balance) + commission })
+                  .eq('id', userProfile.referred_by);
+
+                // Record the earning
+                await serviceClient.from('referral_earnings').insert({
+                  referrer_id: userProfile.referred_by,
+                  order_id: insertedOrder.id,
+                  amount: commission,
+                });
+
+                console.log('Referral commission processed:', { referrer: userProfile.referred_by, commission });
+              }
+            }
+          }
+        } catch (refErr) {
+          console.log('Referral commission error (non-blocking):', refErr);
+        }
+
         // Get user profile for notification
         const { data: profile } = await serviceClient
           .from('profiles')

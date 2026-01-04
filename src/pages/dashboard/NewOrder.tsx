@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link as LinkIcon, Loader2, Minus, Plus, Check, RefreshCw, Info, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Link as LinkIcon, Loader2, Minus, Plus, Check, RefreshCw, Info, AlertCircle, CheckCircle2, Star, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useFavorites } from "@/hooks/useFavorites";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { socialIcons } from "@/components/icons/SocialIcons";
@@ -51,6 +52,7 @@ const platforms = [
 const NewOrder = () => {
   const { user, profile, refreshProfile, userStatus } = useAuth();
   const { formatAmount } = useCurrency();
+  const { favorites, addFavorite, removeFavorite, isFavorite } = useFavorites();
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedService, setSelectedService] = useState<ApiService | null>(null);
@@ -61,6 +63,7 @@ const NewOrder = () => {
   const [allServices, setAllServices] = useState<ApiService[]>([]);
   const [loadingServices, setLoadingServices] = useState(true);
   const [priceMarkup, setPriceMarkup] = useState(0);
+  const [showFavorites, setShowFavorites] = useState(false);
 
   useEffect(() => {
     fetchServices();
@@ -150,17 +153,42 @@ const NewOrder = () => {
   const handleServiceSelect = (service: ApiService) => {
     setSelectedService(service);
     setQuantity(parseInt(service.min));
+    setShowFavorites(false);
   };
 
   const handlePlatformSelect = (platformId: string) => {
     setSelectedPlatform(platformId);
     setSelectedCategory(null);
     setSelectedService(null);
+    setShowFavorites(false);
   };
 
   const handleCategorySelect = (category: string) => {
     setSelectedCategory(category);
     setSelectedService(null);
+  };
+
+  const handleFavoriteSelect = (fav: { service_id: string; service_name: string; platform: string }) => {
+    const service = allServices.find(s => s.service.toString() === fav.service_id);
+    if (service) {
+      setSelectedPlatform(fav.platform);
+      setSelectedService(service);
+      setQuantity(parseInt(service.min));
+      setShowFavorites(false);
+    } else {
+      toast({ title: "Service not available", description: "This service is no longer available.", variant: "destructive" });
+    }
+  };
+
+  const toggleFavorite = () => {
+    if (!selectedService || !selectedPlatform) return;
+    
+    const serviceId = selectedService.service.toString();
+    if (isFavorite(serviceId)) {
+      removeFavorite(serviceId);
+    } else {
+      addFavorite(serviceId, selectedService.name, selectedPlatform);
+    }
   };
 
   const handleSubmit = async () => {
@@ -272,6 +300,57 @@ const NewOrder = () => {
             animate={{ opacity: 1, y: 0 }}
             className="max-w-2xl bg-card rounded-2xl shadow-card border border-border p-6 lg:p-8"
           >
+        {/* Favorites Section */}
+        {favorites.length > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <label className="block text-sm font-medium text-foreground">
+                Quick Access - Favorites
+              </label>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowFavorites(!showFavorites)}
+                className="text-xs"
+              >
+                {showFavorites ? "Hide" : "Show"} ({favorites.length})
+              </Button>
+            </div>
+            <AnimatePresence>
+              {showFavorites && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="grid grid-cols-1 gap-2 mb-4"
+                >
+                  {favorites.slice(0, 5).map((fav) => {
+                    const Icon = socialIcons[fav.platform];
+                    return (
+                      <motion.button
+                        key={fav.id}
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                        onClick={() => handleFavoriteSelect(fav)}
+                        className="flex items-center gap-3 p-3 bg-secondary/50 hover:bg-accent rounded-xl text-left transition-all"
+                      >
+                        <div className="h-8 w-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                          {Icon && <Icon className="h-4 w-4" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{fav.service_name}</p>
+                          <p className="text-xs text-muted-foreground capitalize">{fav.platform}</p>
+                        </div>
+                        <RotateCcw className="h-4 w-4 text-muted-foreground" />
+                      </motion.button>
+                    );
+                  })}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+
         {/* Platform Selection */}
         <div className="mb-8">
           <label className="block text-sm font-medium text-foreground mb-4">
@@ -483,6 +562,15 @@ const NewOrder = () => {
                   <span>Cancel:</span>
                   <span className="text-foreground">{selectedService.cancel ? "Yes ✓" : "No"}</span>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={toggleFavorite}
+                  className={`w-full mt-3 ${isFavorite(selectedService.service.toString()) ? "text-primary" : "text-muted-foreground"}`}
+                >
+                  <Star className={`h-4 w-4 mr-2 ${isFavorite(selectedService.service.toString()) ? "fill-primary" : ""}`} />
+                  {isFavorite(selectedService.service.toString()) ? "Remove from Favorites" : "Save to Favorites"}
+                </Button>
               </div>
             </motion.div>
           )}

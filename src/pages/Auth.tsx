@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
-import { Loader2, Mail, Lock, User, ArrowRight, ShieldCheck, Eye, EyeOff } from "lucide-react";
+import { Loader2, Mail, Lock, User, ArrowRight, ShieldCheck, Eye, EyeOff, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
@@ -33,8 +33,10 @@ const getPasswordStrength = (password: string): { score: number; label: string; 
 
 const Auth = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const referralCode = searchParams.get("ref");
   const { user, signIn, signUp, loading } = useAuth();
-  const [isLogin, setIsLogin] = useState(true);
+  const [isLogin, setIsLogin] = useState(!referralCode); // Default to signup if referral code present
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -112,6 +114,35 @@ const Auth = () => {
     }
   };
 
+  const handleReferral = async (newUserId: string) => {
+    if (!referralCode) return;
+
+    try {
+      // Find the referrer by their code
+      const { data: referrerData } = await supabase
+        .from("referral_codes")
+        .select("user_id")
+        .eq("code", referralCode)
+        .maybeSingle();
+
+      if (referrerData?.user_id) {
+        // Create the referral relationship
+        await supabase.from("referrals").insert({
+          referrer_id: referrerData.user_id,
+          referred_id: newUserId,
+        });
+
+        // Update the new user's profile with referred_by
+        await supabase
+          .from("profiles")
+          .update({ referred_by: referrerData.user_id })
+          .eq("id", newUserId);
+      }
+    } catch (error) {
+      console.error("Failed to process referral:", error);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -152,12 +183,20 @@ const Auth = () => {
             });
           }
         } else {
+          // Get the current user after successful signup
+          const { data: { user: newUser } } = await supabase.auth.getUser();
+          
+          // Handle referral if code present
+          if (newUser?.id && referralCode) {
+            await handleReferral(newUser.id);
+          }
+          
           // Send signup notification
           await sendSignupNotification(email, username);
           
           toast({
             title: "Welcome to Epik!",
-            description: "Your account has been created.",
+            description: referralCode ? "Your account has been created with a referral bonus!" : "Your account has been created.",
           });
           navigate("/dashboard");
         }
@@ -194,6 +233,20 @@ const Auth = () => {
         transition={{ duration: 0.5, ease: "easeOut" }}
         className="relative z-10 w-full max-w-md"
       >
+        {/* Referral Banner */}
+        {referralCode && !isLogin && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 p-3 bg-primary/10 border border-primary/20 rounded-xl flex items-center gap-3"
+          >
+            <Gift className="h-5 w-5 text-primary flex-shrink-0" />
+            <p className="text-sm text-foreground">
+              You've been referred! Sign up to join Epik.
+            </p>
+          </motion.div>
+        )}
+
         {/* Logo */}
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
