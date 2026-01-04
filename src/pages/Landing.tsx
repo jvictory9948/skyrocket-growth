@@ -125,13 +125,11 @@ const faqs = [
   },
 ];
 
-const countries = [
-  { name: "Nigeria", flag: "🇳🇬", currency: "NGN" },
-  { name: "Kenya", flag: "🇰🇪", currency: "KES" },
-  { name: "Ghana", flag: "🇬🇭", currency: "GHS" },
-  { name: "South Africa", flag: "🇿🇦", currency: "ZAR" },
-  { name: "Tanzania", flag: "🇹🇿", currency: "TZS" },
-  { name: "Uganda", flag: "🇺🇬", currency: "UGX" },
+const whyChooseUs = [
+  { title: "Trusted by Thousands", description: "Over 50,000 creators and businesses rely on us daily", icon: Users },
+  { title: "Lightning Fast", description: "Most orders start delivering within minutes", icon: Zap },
+  { title: "Always Available", description: "Our platform runs 24/7 with 99.9% uptime", icon: Globe },
+  { title: "Award Winning", description: "Recognized for excellence in customer service", icon: Award },
 ];
 
 const FAQItem = ({ question, answer, isOpen, onClick }: { question: string; answer: string; isOpen: boolean; onClick: () => void }) => (
@@ -269,7 +267,7 @@ const Landing = () => {
               className="inline-flex items-center gap-2 bg-accent/80 backdrop-blur-sm rounded-full px-5 py-2.5 mb-8 border border-primary/20"
             >
               <Sparkles className="h-4 w-4 text-primary animate-pulse" />
-              <span className="text-sm font-accent font-medium text-foreground">#1 Rated SMM Panel in Africa 2025</span>
+              <span className="text-sm font-accent font-medium text-foreground">#1 Trusted SMM Panel • Fast & Reliable</span>
             </motion.div>
 
             <motion.h1
@@ -278,12 +276,11 @@ const Landing = () => {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-5xl md:text-7xl lg:text-8xl font-display font-extrabold tracking-tight mb-6 leading-tight"
             >
-              <span className="text-foreground">Boost Your</span>
+              <span className="text-foreground">Supercharge</span>
               <br />
-              <span className="text-gradient">Social Media</span>
+              <span className="text-gradient">Your Social</span>
               <br />
-              <span className="text-foreground">Across </span>
-              <span className="text-gradient-secondary">Africa</span>
+              <span className="text-gradient-secondary">Presence</span>
             </motion.h1>
 
             <motion.p
@@ -329,7 +326,7 @@ const Landing = () => {
               </div>
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Check className="h-5 w-5 text-success" />
-                <span className="text-sm font-medium">Cheapest in Africa</span>
+                <span className="text-sm font-medium">Best Prices Guaranteed</span>
               </div>
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Check className="h-5 w-5 text-success" />
@@ -504,10 +501,11 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Countries */}
+      {/* Why Choose Us */}
       <section className="py-24 relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-tertiary/10 rounded-full blur-3xl" />
+          <div className="absolute top-1/4 right-0 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
         </div>
 
         <div className="container mx-auto px-4 relative z-10">
@@ -518,30 +516,32 @@ const Landing = () => {
             className="text-center mb-16"
           >
             <span className="inline-block px-4 py-1.5 bg-accent rounded-full text-sm font-accent font-medium text-primary mb-4">
-              Local Support
+              Why Choose Us
             </span>
             <h2 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-4">
-              Serving All of <span className="text-gradient-secondary">Africa</span>
+              Built for <span className="text-gradient-secondary">Success</span>
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto font-body">
-              Pay in your local currency with your preferred payment method. We support multiple African countries.
+              We're committed to helping you grow your social media presence with the best tools and support available.
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {countries.map((country, index) => (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {whyChooseUs.map((item, index) => (
               <motion.div
-                key={country.name}
+                key={item.title}
                 initial={{ opacity: 0, scale: 0.9 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                whileHover={{ scale: 1.05, y: -5 }}
-                className="bg-card border border-border rounded-2xl p-5 text-center hover:border-tertiary/50 hover:shadow-lg transition-all duration-300 cursor-pointer"
+                whileHover={{ scale: 1.02, y: -5 }}
+                className="bg-card border border-border rounded-2xl p-6 text-center hover:border-primary/40 hover:shadow-lg transition-all duration-300"
               >
-                <div className="text-4xl mb-2">{country.flag}</div>
-                <h4 className="font-heading font-semibold text-foreground">{country.name}</h4>
-                <span className="text-sm text-muted-foreground font-accent">{country.currency}</span>
+                <div className="inline-flex items-center justify-center h-14 w-14 rounded-xl bg-gradient-primary mb-4">
+                  <item.icon className="h-7 w-7 text-white" />
+                </div>
+                <h4 className="font-heading font-semibold text-foreground mb-2">{item.title}</h4>
+                <p className="text-sm text-muted-foreground font-body">{item.description}</p>
               </motion.div>
             ))}
           </div>
@@ -664,13 +664,13 @@ const Landing = () => {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link to={user ? "/dashboard" : "/auth"}>
-                <Button variant="secondary" size="xl" className="group font-heading">
+                <Button size="xl" className="group font-heading bg-white text-primary hover:bg-white/90">
                   {user ? "Go to Dashboard" : "Start Your Journey"}
                   <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
               <Link to="/about">
-                <Button variant="glass" size="lg" className="text-white border-white/30 hover:bg-white/10 font-heading">
+                <Button size="lg" className="font-heading bg-transparent text-white border-2 border-white/40 hover:bg-white/10 hover:border-white/60">
                   Learn More About Us
                 </Button>
               </Link>
