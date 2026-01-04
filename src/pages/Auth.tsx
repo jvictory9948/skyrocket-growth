@@ -202,7 +202,7 @@ const Auth = () => {
           className="text-center mb-6"
         >
           <a href="/" className="inline-block">
-            <img src={epikLogo} alt="Epik" className="h-16 mx-auto" />
+            <img src={epikLogo} alt="Epik" className="h-24 mx-auto" />
           </a>
           <motion.p 
             key={isLogin ? "login" : "signup"}
