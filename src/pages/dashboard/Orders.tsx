@@ -60,28 +60,26 @@ const Orders = () => {
     if (!user) return;
 
     const channel = supabase
-      .channel('orders-realtime')
+      .channel("orders-realtime")
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: '*',
-          schema: 'public',
-          table: 'orders',
+          event: "*",
+          schema: "public",
+          table: "orders",
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          console.log('Order update received:', payload);
-          
-          if (payload.eventType === 'INSERT') {
-            setOrders(prev => [payload.new as Order, ...prev]);
-          } else if (payload.eventType === 'UPDATE') {
-            setOrders(prev => prev.map(order => 
-              order.id === payload.new.id ? payload.new as Order : order
-            ));
-          } else if (payload.eventType === 'DELETE') {
-            setOrders(prev => prev.filter(order => order.id !== payload.old.id));
+          console.log("Order update received:", payload);
+
+          if (payload.eventType === "INSERT") {
+            setOrders((prev) => [payload.new as Order, ...prev]);
+          } else if (payload.eventType === "UPDATE") {
+            setOrders((prev) => prev.map((order) => (order.id === payload.new.id ? (payload.new as Order) : order)));
+          } else if (payload.eventType === "DELETE") {
+            setOrders((prev) => prev.filter((order) => order.id !== payload.old.id));
           }
-        }
+        },
       )
       .subscribe();
 
@@ -103,27 +101,13 @@ const Orders = () => {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold text-foreground">Order History</h1>
-          <p className="text-muted-foreground mt-1">
-            Track all your orders in real-time.
-          </p>
+          <p className="text-muted-foreground mt-1">Track all your orders in real-time.</p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={fetchOrders}
-          disabled={loading}
-        >
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+        <Button variant="outline" size="sm" onClick={fetchOrders} disabled={loading}>
+          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
           Refresh
         </Button>
       </div>
-
-      <Alert className="mb-6 border-amber-500/50 bg-amber-500/10">
-        <AlertCircle className="h-4 w-4 text-amber-500" />
-        <AlertDescription className="text-amber-700 dark:text-amber-400">
-          Orders older than 30 days are automatically cleared from history. Please save any important order details before this period.
-        </AlertDescription>
-      </Alert>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -161,9 +145,7 @@ const Orders = () => {
                         transition={{ delay: index * 0.03 }}
                         className="border-t border-border hover:bg-accent/30 transition-colors"
                       >
-                        <td className="px-6 py-4 text-sm font-mono text-foreground">
-                          #{order.id.slice(0, 8)}
-                        </td>
+                        <td className="px-6 py-4 text-sm font-mono text-foreground">#{order.id.slice(0, 8)}</td>
                         <td className="px-6 py-4 text-sm text-muted-foreground">
                           {new Date(order.created_at).toLocaleDateString()}
                         </td>
@@ -173,12 +155,8 @@ const Orders = () => {
                             <span className="text-sm text-foreground capitalize">{order.platform}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-sm text-foreground max-w-[200px] truncate">
-                          {order.service}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-foreground">
-                          {order.quantity.toLocaleString()}
-                        </td>
+                        <td className="px-6 py-4 text-sm text-foreground max-w-[200px] truncate">{order.service}</td>
+                        <td className="px-6 py-4 text-sm text-foreground">{order.quantity.toLocaleString()}</td>
                         <td className="px-6 py-4 text-sm font-medium text-foreground">
                           {formatAmount(Number(order.charge))}
                         </td>
@@ -212,9 +190,7 @@ const Orders = () => {
                   >
                     <div className="flex justify-between items-start">
                       <div>
-                        <span className="text-sm font-semibold text-foreground font-mono">
-                          #{order.id.slice(0, 8)}
-                        </span>
+                        <span className="text-sm font-semibold text-foreground font-mono">#{order.id.slice(0, 8)}</span>
                         <p className="text-xs text-muted-foreground">
                           {new Date(order.created_at).toLocaleDateString()}
                         </p>
@@ -234,9 +210,7 @@ const Orders = () => {
                     <p className="text-xs text-muted-foreground truncate">{order.service}</p>
                     <div className="flex justify-between items-center pt-2 border-t border-border">
                       <div>
-                        <span className="text-lg font-bold text-foreground">
-                          {formatAmount(Number(order.charge))}
-                        </span>
+                        <span className="text-lg font-bold text-foreground">{formatAmount(Number(order.charge))}</span>
                         <span className="text-xs text-muted-foreground ml-2">
                           {order.quantity.toLocaleString()} units
                         </span>
@@ -257,6 +231,14 @@ const Orders = () => {
           </>
         )}
       </motion.div>
+
+      <Alert className="mb-6 border-amber-500/50 bg-amber-500/10">
+        <AlertCircle className="h-4 w-4 text-amber-500" />
+        <AlertDescription className="text-amber-700 dark:text-amber-400">
+          Orders older than 30 days are automatically cleared from history. Please save any important order details
+          before this period.
+        </AlertDescription>
+      </Alert>
     </div>
   );
 };
