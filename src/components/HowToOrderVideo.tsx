@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Play, CirclePlay } from "lucide-react";
 import { useState } from "react";
+import videoThumbnail from "@/assets/video-thumbnail.png";
 
 interface HowToOrderVideoProps {
   variant?: "sidebar" | "landing";
@@ -40,8 +41,14 @@ const HowToOrderVideo = ({ variant = "sidebar" }: HowToOrderVideoProps) => {
                 onClick={() => setIsPlaying(true)}
                 className="absolute inset-0 flex items-center justify-center group cursor-pointer"
               >
-                {/* Thumbnail overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
+                {/* Thumbnail image */}
+                <img 
+                  src={videoThumbnail} 
+                  alt="How to Order Tutorial" 
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                {/* Gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/20 to-transparent" />
                 
                 {/* Play button */}
                 <motion.div
@@ -91,15 +98,20 @@ const HowToOrderVideo = ({ variant = "sidebar" }: HowToOrderVideoProps) => {
         </div>
       </div>
       
-      {/* Video Container */}
       <div className="relative aspect-[16/10] bg-secondary">
         {!isPlaying ? (
           <button
             onClick={() => setIsPlaying(true)}
             className="absolute inset-0 flex items-center justify-center group cursor-pointer"
           >
+            {/* Thumbnail image */}
+            <img 
+              src={videoThumbnail} 
+              alt="How to Order Tutorial" 
+              className="absolute inset-0 w-full h-full object-cover"
+            />
             {/* Gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-background/10 to-transparent" />
             
             {/* Play button */}
             <motion.div
