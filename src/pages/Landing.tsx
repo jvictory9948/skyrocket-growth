@@ -280,7 +280,7 @@ const Landing = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-[2.75rem] sm:text-5xl md:text-7xl lg:text-8xl font-display font-extrabold tracking-tight mb-6 leading-tight"
+              className="text-[11vw] sm:text-5xl md:text-7xl lg:text-8xl font-display font-extrabold tracking-tight mb-6 leading-tight"
             >
               <span className="text-foreground block">Supercharge</span>
               <span className="text-gradient block">Your Social</span>
