@@ -13,7 +13,9 @@ import {
   TestTube,
   Percent,
   UserPlus,
-  Shield
+  Shield,
+  Trash2,
+  AlertTriangle
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -59,6 +61,7 @@ const AdminSettings = () => {
   
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState<string | null>(null);
+  const [isCleaningData, setIsCleaningData] = useState(false);
 
   // Fetch settings
   const { data: settings, isLoading: settingsLoading } = useQuery({
@@ -77,16 +80,6 @@ const AdminSettings = () => {
   const { data: revenueStats, isLoading: revenueLoading } = useQuery({
     queryKey: ["admin-revenue-stats"],
     queryFn: async () => {
-      const { data: settingsData } = await supabase
-        .from("admin_settings")
-        .select("setting_key, setting_value")
-        .eq("setting_key", "revenue_reset_date")
-        .single();
-
-      const resetDate = settingsData?.setting_value 
-        ? new Date(settingsData.setting_value) 
-        : null;
-
       const now = new Date();
       const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -103,13 +96,6 @@ const AdminSettings = () => {
         .select("charge")
         .gte("created_at", startOfMonth.toISOString());
 
-      // Overall revenue (since reset or all time)
-      let overallQuery = supabase.from("orders").select("charge");
-      if (resetDate) {
-        overallQuery = overallQuery.gte("created_at", resetDate.toISOString());
-      }
-      const { data: overallOrders } = await overallQuery;
-
       // All time revenue
       const { data: allTimeOrders } = await supabase
         .from("orders")
@@ -118,9 +104,33 @@ const AdminSettings = () => {
       return {
         daily: dailyOrders?.reduce((sum, o) => sum + Number(o.charge), 0) || 0,
         monthly: monthlyOrders?.reduce((sum, o) => sum + Number(o.charge), 0) || 0,
-        overall: overallOrders?.reduce((sum, o) => sum + Number(o.charge), 0) || 0,
         allTime: allTimeOrders?.reduce((sum, o) => sum + Number(o.charge), 0) || 0,
-        resetDate,
+      };
+    },
+  });
+
+  // Fetch old data stats for cleanup
+  const { data: oldDataStats, isLoading: oldDataLoading, refetch: refetchOldData } = useQuery({
+    queryKey: ["admin-old-data-stats"],
+    queryFn: async () => {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const [ordersRes, transactionsRes] = await Promise.all([
+        supabase
+          .from("orders")
+          .select("id", { count: "exact" })
+          .lt("created_at", thirtyDaysAgo.toISOString()),
+        supabase
+          .from("transactions")
+          .select("id", { count: "exact" })
+          .lt("created_at", thirtyDaysAgo.toISOString()),
+      ]);
+
+      return {
+        oldOrders: ordersRes.count || 0,
+        oldTransactions: transactionsRes.count || 0,
+        cutoffDate: thirtyDaysAgo,
       };
     },
   });
@@ -233,24 +243,67 @@ const AdminSettings = () => {
 
   const handleResetRevenue = async () => {
     try {
+      // Delete all orders to reset revenue
       const { error } = await supabase
-        .from("admin_settings")
-        .update({ setting_value: new Date().toISOString() })
-        .eq("setting_key", "revenue_reset_date");
+        .from("orders")
+        .delete()
+        .neq("id", "00000000-0000-0000-0000-000000000000"); // Delete all orders
 
       if (error) throw error;
 
       toast({
         title: "Revenue reset",
-        description: "Overall revenue counter has been reset.",
+        description: "All orders have been deleted. Revenue is now reset to zero.",
       });
       queryClient.invalidateQueries({ queryKey: ["admin-revenue-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
     } catch (error: any) {
       toast({
         title: "Error",
         description: error.message || "Failed to reset revenue",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleCleanOldData = async () => {
+    setIsCleaningData(true);
+    try {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      // Delete old orders
+      const { error: ordersError } = await supabase
+        .from("orders")
+        .delete()
+        .lt("created_at", thirtyDaysAgo.toISOString());
+
+      if (ordersError) throw ordersError;
+
+      // Delete old transactions
+      const { error: transactionsError } = await supabase
+        .from("transactions")
+        .delete()
+        .lt("created_at", thirtyDaysAgo.toISOString());
+
+      if (transactionsError) throw transactionsError;
+
+      toast({
+        title: "Data cleaned",
+        description: "All orders and transactions older than 30 days have been deleted.",
+      });
+      
+      refetchOldData();
+      queryClient.invalidateQueries({ queryKey: ["admin-revenue-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to clean old data",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCleaningData(false);
     }
   };
 
@@ -536,22 +589,26 @@ const AdminSettings = () => {
             </div>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="outline" size="sm">
+                <Button variant="destructive" size="sm">
                   <RefreshCw className="h-4 w-4 mr-2" />
-                  Reset
+                  Reset All
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Reset Revenue Counter?</AlertDialogTitle>
+                  <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                    <AlertTriangle className="h-5 w-5" />
+                    Reset ALL Revenue?
+                  </AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will reset the "overall" revenue counter to start from now. Daily and monthly stats are calculated automatically. All time revenue will remain unchanged.
+                    <strong>Warning:</strong> This will permanently delete ALL orders from the database. 
+                    All revenue (daily, monthly, and all-time) will be reset to zero. This action cannot be undone.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleResetRevenue}>
-                    Reset Revenue
+                  <AlertDialogAction onClick={handleResetRevenue} className="bg-destructive hover:bg-destructive/90">
+                    Yes, Delete All Orders
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -563,7 +620,7 @@ const AdminSettings = () => {
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
           ) : (
-            <div className="grid md:grid-cols-4 gap-4">
+            <div className="grid md:grid-cols-3 gap-4">
               <div className="bg-secondary/50 rounded-lg p-4">
                 <div className="flex items-center gap-2 text-muted-foreground mb-1">
                   <Calendar className="h-4 w-4" />
@@ -584,27 +641,108 @@ const AdminSettings = () => {
               </div>
               <div className="bg-primary/5 rounded-lg p-4 border border-primary/20">
                 <div className="flex items-center gap-2 text-primary mb-1">
-                  <DollarSign className="h-4 w-4" />
-                  <span className="text-sm font-medium">Since Reset</span>
-                </div>
-                <p className="text-2xl font-bold text-foreground">
-                  {formatAmount(revenueStats?.overall || 0)}
-                </p>
-                {revenueStats?.resetDate && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {new Date(revenueStats.resetDate).toLocaleDateString()}
-                  </p>
-                )}
-              </div>
-              <div className="bg-secondary/50 rounded-lg p-4">
-                <div className="flex items-center gap-2 text-muted-foreground mb-1">
                   <TrendingUp className="h-4 w-4" />
-                  <span className="text-sm">All Time</span>
+                  <span className="text-sm font-medium">All Time</span>
                 </div>
                 <p className="text-2xl font-bold text-foreground">
                   {formatAmount(revenueStats?.allTime || 0)}
                 </p>
               </div>
+            </div>
+          )}
+        </motion.div>
+
+        {/* Data Cleanup */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="bg-card rounded-xl border border-border p-6 lg:col-span-2"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <Trash2 className="h-5 w-5 text-primary" />
+              <h2 className="text-lg font-semibold text-foreground">Data Cleanup (30+ Days)</h2>
+            </div>
+          </div>
+
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm text-amber-700 dark:text-amber-400 font-medium">
+                  Automatic Cleanup Policy
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Orders and transactions older than 30 days should be periodically cleaned to maintain database performance. 
+                  Users are notified of this policy on their order and transaction history pages.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {oldDataLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="bg-secondary/50 rounded-lg p-4">
+                  <p className="text-sm text-muted-foreground mb-1">Old Orders (30+ days)</p>
+                  <p className="text-2xl font-bold text-foreground">{oldDataStats?.oldOrders || 0}</p>
+                </div>
+                <div className="bg-secondary/50 rounded-lg p-4">
+                  <p className="text-sm text-muted-foreground mb-1">Old Transactions (30+ days)</p>
+                  <p className="text-2xl font-bold text-foreground">{oldDataStats?.oldTransactions || 0}</p>
+                </div>
+              </div>
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="w-full border-amber-500/50 text-amber-600 hover:bg-amber-500/10"
+                    disabled={(oldDataStats?.oldOrders || 0) === 0 && (oldDataStats?.oldTransactions || 0) === 0}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Clean Old Data ({(oldDataStats?.oldOrders || 0) + (oldDataStats?.oldTransactions || 0)} records)
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="flex items-center gap-2">
+                      <Trash2 className="h-5 w-5 text-amber-500" />
+                      Clean Old Data?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete:
+                      <ul className="list-disc list-inside mt-2 space-y-1">
+                        <li><strong>{oldDataStats?.oldOrders || 0}</strong> orders older than 30 days</li>
+                        <li><strong>{oldDataStats?.oldTransactions || 0}</strong> transactions older than 30 days</li>
+                      </ul>
+                      <p className="mt-2">This action cannot be undone.</p>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={handleCleanOldData}
+                      disabled={isCleaningData}
+                      className="bg-amber-500 hover:bg-amber-600"
+                    >
+                      {isCleaningData ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Cleaning...
+                        </>
+                      ) : (
+                        "Yes, Clean Old Data"
+                      )}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           )}
         </motion.div>
