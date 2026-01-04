@@ -159,8 +159,8 @@ const Funds = () => {
         return;
       }
 
-      // Reference format: KP-{fullUserId} (36 chars UUID + 3 chars prefix = 39 chars, under 50 limit)
-      const reference = `KP-${user.id}`;
+      // Reference format: KP-{fullUserId}-{timestamp} for unique references per payment
+      const reference = `KP-${user.id}-${Date.now()}`;
       const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/korapay-webhook`;
 
       window.Korapay.initialize({
