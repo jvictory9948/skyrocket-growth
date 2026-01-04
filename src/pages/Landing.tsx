@@ -164,8 +164,8 @@ const whyChooseUs = [
 const pricingHighlights = [
   { service: "Instagram Followers", price: "Starting from ₦150", popular: true },
   { service: "TikTok Likes", price: "Starting from ₦30", popular: false },
-  { service: "YouTube Views", price: "Starting from ₦100", popular: true },
-  { service: "Twitter Views", price: "Starting from ₦10", popular: false },
+  { service: "YouTube Views", price: "Starting from ₦112", popular: true },
+  { service: "Twitter Views", price: "Starting from ₦9.6", popular: false },
 ];
 
 const guarantees = [
