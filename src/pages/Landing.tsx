@@ -164,7 +164,13 @@ const Landing = () => {
   const y2 = useTransform(scrollYProgress, [0, 1], [0, -200]);
 
   return (
-    <div className="min-h-screen bg-background overflow-hidden">
+    <div className="min-h-screen bg-background overflow-hidden relative">
+      {/* Global purple glow background */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-primary/10 rounded-full blur-[120px]" />
+        <div className="absolute bottom-1/4 left-1/4 w-[500px] h-[500px] bg-primary/8 rounded-full blur-[100px]" />
+        <div className="absolute top-1/2 right-0 w-[400px] h-[400px] bg-primary/6 rounded-full blur-[80px]" />
+      </div>
       {/* Navigation */}
       <motion.header
         initial={{ y: -100 }}
