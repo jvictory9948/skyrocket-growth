@@ -288,7 +288,7 @@ const Funds = () => {
                   }`}
                 >
                   <Icon className="h-4 w-4" />
-                  <span className="hidden sm:inline">{method.name}</span>
+                  <span>{method.name}</span>
                 </button>
               );
             })}
