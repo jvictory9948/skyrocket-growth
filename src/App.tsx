@@ -30,6 +30,7 @@ import AdminSettings from "./pages/admin/AdminSettings";
 import AdminSocialLinks from "./pages/admin/AdminSocialLinks";
 import AdminPaymentMethods from "./pages/admin/AdminPaymentMethods";
 import AdminRefunds from "./pages/admin/AdminRefunds";
+import AdminNewsletter from "./pages/admin/AdminNewsletter";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -68,6 +69,7 @@ const App = () => (
                 <Route path="admin/social-links" element={<AdminSocialLinks />} />
                 <Route path="admin/payment-methods" element={<AdminPaymentMethods />} />
                 <Route path="admin/refunds" element={<AdminRefunds />} />
+                <Route path="admin/newsletter" element={<AdminNewsletter />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

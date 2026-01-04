@@ -1,13 +1,16 @@
-import { motion, useScroll, useTransform } from "framer-motion";
-import { ArrowRight, Zap, Shield, Clock, TrendingUp, Check, Star, Users, Globe, ChevronDown, Sparkles, MessageCircle, Award, Heart, Lock, Eye } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowRight, Zap, Shield, Clock, TrendingUp, Check, Star, Users, Globe, ChevronDown, Sparkles, MessageCircle, Award, Heart, Lock, Eye, Mail, Send } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Footer } from "@/components/Footer";
 import { socialIcons } from "@/components/icons/SocialIcons";
 import { useAuth } from "@/hooks/useAuth";
 import epikLogo from "@/assets/epik-logo.png";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 const platforms = [
   { id: "instagram", name: "Instagram", color: "from-pink-500 to-purple-600" },
@@ -169,12 +172,93 @@ const FAQItem = ({ question, answer, isOpen, onClick }: { question: string; answ
   </motion.div>
 );
 
+// Newsletter Form Component
+const NewsletterForm = () => {
+  const [email, setEmail] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from("newsletter_subscribers")
+        .insert({ email: email.toLowerCase().trim() });
+
+      if (error) {
+        if (error.code === "23505") {
+          toast({ title: "Already subscribed!", description: "This email is already on our list." });
+        } else {
+          throw error;
+        }
+      } else {
+        setIsSubscribed(true);
+        toast({ title: "Subscribed!", description: "Welcome to the Epik newsletter!" });
+        setEmail("");
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to subscribe. Please try again.", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <AnimatePresence mode="wait">
+      {isSubscribed ? (
+        <motion.div
+          key="success"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex items-center justify-center gap-2 text-white font-medium"
+        >
+          <Check className="h-5 w-5" />
+          <span>You're subscribed! Check your inbox soon.</span>
+        </motion.div>
+      ) : (
+        <motion.form
+          key="form"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          onSubmit={handleSubscribe}
+          className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
+        >
+          <div className="relative flex-1">
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email"
+              required
+              className="pl-10 h-12 bg-white/95 border-0 text-foreground placeholder:text-muted-foreground rounded-xl"
+            />
+          </div>
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="h-12 px-6 bg-foreground text-background hover:bg-foreground/90 rounded-xl font-heading"
+          >
+            {isSubmitting ? (
+              <span className="animate-pulse">Subscribing...</span>
+            ) : (
+              <>
+                Subscribe <Send className="ml-2 h-4 w-4" />
+              </>
+            )}
+          </Button>
+        </motion.form>
+      )}
+    </AnimatePresence>
+  );
+};
+
 const Landing = () => {
   const { user } = useAuth();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const { scrollYProgress } = useScroll();
-  const y1 = useTransform(scrollYProgress, [0, 1], [0, -100]);
-  const y2 = useTransform(scrollYProgress, [0, 1], [0, -200]);
 
   return (
     <div className="min-h-screen bg-background overflow-hidden relative">
@@ -744,6 +828,44 @@ const Landing = () => {
               />
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Newsletter Section */}
+      <section className="py-24 bg-gradient-primary relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
+        </div>
+
+        <div className="container mx-auto px-4 relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="max-w-2xl mx-auto text-center"
+          >
+            <motion.div
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-white/20 mb-6"
+            >
+              <Mail className="h-8 w-8 text-white" />
+            </motion.div>
+
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold text-white mb-4">
+              Stay Updated with Epik
+            </h2>
+            <p className="text-lg text-white/80 mb-8 font-body">
+              Get exclusive tips, platform updates, new service announcements, and special promotions delivered straight to your inbox. Join 10,000+ subscribers!
+            </p>
+
+            <NewsletterForm />
+
+            <p className="text-sm text-white/60 mt-4 font-accent">
+              We respect your privacy. Unsubscribe anytime.
+            </p>
+          </motion.div>
         </div>
       </section>
 
