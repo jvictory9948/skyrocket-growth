@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link as LinkIcon, Loader2, Minus, Plus, Check, RefreshCw, Info, AlertCircle, CheckCircle2, Star, RotateCcw, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -65,6 +65,24 @@ const NewOrder = () => {
   const [priceMarkup, setPriceMarkup] = useState(0);
   const [showFavorites, setShowFavorites] = useState(false);
   const [showPlatformDropdown, setShowPlatformDropdown] = useState(false);
+  const platformDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (platformDropdownRef.current && !platformDropdownRef.current.contains(event.target as Node)) {
+        setShowPlatformDropdown(false);
+      }
+    };
+
+    if (showPlatformDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showPlatformDropdown]);
 
   useEffect(() => {
     fetchServices();
@@ -357,16 +375,16 @@ const NewOrder = () => {
           <label className="block text-sm font-medium text-foreground mb-4">
             1. Select Platform
           </label>
-          <div className="relative">
+          <div className="relative" ref={platformDropdownRef}>
             <button
               type="button"
               onClick={() => setShowPlatformDropdown(!showPlatformDropdown)}
-              className="w-full flex items-center gap-4 p-4 rounded-xl bg-secondary hover:bg-accent border border-border transition-all text-left"
+              className="w-full flex items-center gap-3 p-3 rounded-xl bg-secondary hover:bg-accent border border-border transition-all text-left"
             >
               {selectedPlatform ? (
                 <>
-                  <div className="h-10 w-10 bg-background rounded-lg flex items-center justify-center shrink-0">
-                    {socialIcons[selectedPlatform] && React.createElement(socialIcons[selectedPlatform], { className: "h-5 w-5" })}
+                  <div className="h-8 w-8 bg-background rounded-lg flex items-center justify-center shrink-0">
+                    {socialIcons[selectedPlatform] && React.createElement(socialIcons[selectedPlatform], { className: "h-4 w-4" })}
                   </div>
                   <span className="text-sm font-medium text-foreground flex-1">
                     {platforms.find(p => p.id === selectedPlatform)?.name}
@@ -375,7 +393,7 @@ const NewOrder = () => {
               ) : (
                 <span className="text-sm text-muted-foreground flex-1">Select a platform...</span>
               )}
-              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${showPlatformDropdown ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${showPlatformDropdown ? 'rotate-180' : ''}`} />
             </button>
             
             <AnimatePresence>
@@ -386,7 +404,7 @@ const NewOrder = () => {
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute z-50 w-full mt-2 bg-popover border border-border rounded-xl shadow-lg overflow-hidden"
                 >
-                  <div className="max-h-[300px] overflow-y-auto">
+                  <div className="max-h-[280px] overflow-y-auto">
                     {platforms.map((platform) => {
                       const Icon = socialIcons[platform.id];
                       const serviceCount = getPlatformServices(platform.id).length;
@@ -397,18 +415,18 @@ const NewOrder = () => {
                             handlePlatformSelect(platform.id);
                             setShowPlatformDropdown(false);
                           }}
-                          className={`w-full flex items-center gap-4 p-4 transition-all hover:bg-accent ${
+                          className={`w-full flex items-center gap-3 px-3 py-2.5 transition-all hover:bg-accent ${
                             selectedPlatform === platform.id ? "bg-primary/10" : ""
                           }`}
                         >
-                          <div className="h-10 w-10 bg-background rounded-lg flex items-center justify-center shrink-0">
-                            {Icon && <Icon className="h-5 w-5" />}
+                          <div className="h-7 w-7 bg-background rounded-lg flex items-center justify-center shrink-0">
+                            {Icon && <Icon className="h-4 w-4" />}
                           </div>
                           <span className="text-sm font-medium text-foreground flex-1 text-left">
                             {platform.name}
                           </span>
                           {serviceCount > 0 && (
-                            <span className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full">
+                            <span className="bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">
                               {serviceCount}
                             </span>
                           )}
