@@ -356,28 +356,30 @@ const NewOrder = () => {
           <label className="block text-sm font-medium text-foreground mb-4">
             1. Select Platform
           </label>
-          <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
+          <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-2">
             {platforms.map((platform) => {
               const Icon = socialIcons[platform.id];
               const serviceCount = getPlatformServices(platform.id).length;
               return (
                 <motion.button
                   key={platform.id}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
                   onClick={() => handlePlatformSelect(platform.id)}
-                  className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all relative ${
+                  className={`flex items-center gap-4 p-4 rounded-xl transition-all ${
                     selectedPlatform === platform.id
                       ? "bg-primary/10 ring-2 ring-primary"
                       : "bg-secondary hover:bg-accent"
                   }`}
                 >
-                  {Icon && <Icon className="h-6 w-6 mb-1" />}
-                  <span className="text-xs font-medium text-muted-foreground hidden md:block">
+                  <div className="h-10 w-10 bg-background rounded-lg flex items-center justify-center shrink-0">
+                    {Icon && <Icon className="h-5 w-5" />}
+                  </div>
+                  <span className="text-sm font-medium text-foreground flex-1 text-left">
                     {platform.name}
                   </span>
                   {serviceCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 rounded-full">
+                    <span className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full">
                       {serviceCount}
                     </span>
                   )}
