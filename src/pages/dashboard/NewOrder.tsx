@@ -264,13 +264,13 @@ const NewOrder = () => {
         </Button>
       </div>
 
-      <div className="flex flex-col-reverse lg:flex-row gap-6 lg:gap-8 items-start">
+      <div className="flex flex-row gap-8 items-start">
         {/* Main Order Form */}
         <div className="flex-1 w-full">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-card rounded-2xl shadow-card border border-border p-6 lg:p-8"
+            className="max-w-2xl bg-card rounded-2xl shadow-card border border-border p-6 lg:p-8"
           >
         {/* Platform Selection */}
         <div className="mb-8">
@@ -609,9 +609,9 @@ const NewOrder = () => {
           </motion.div>
         </div>
         
-        {/* Video Sidebar */}
-        <div className="w-full lg:w-[340px] xl:w-[380px] flex-shrink-0">
-          <div className="lg:sticky lg:top-8">
+        {/* Video Sidebar - Desktop only */}
+        <div className="hidden xl:block w-[380px] flex-shrink-0">
+          <div className="sticky top-8">
             <HowToOrderVideo variant="sidebar" />
           </div>
         </div>
