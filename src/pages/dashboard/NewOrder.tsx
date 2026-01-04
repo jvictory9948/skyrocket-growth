@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link as LinkIcon, Loader2, Minus, Plus, Check, RefreshCw } from "lucide-react";
+import { Link as LinkIcon, Loader2, Minus, Plus, Check, RefreshCw, Info, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
@@ -517,6 +517,91 @@ const NewOrder = () => {
               "Place Order"
             )}
           </Button>
+        </div>
+      </motion.div>
+
+      {/* How to Order Guide */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="max-w-2xl mt-6 bg-card rounded-2xl shadow-card border border-border p-6"
+      >
+        <div className="flex items-start gap-3 mb-4">
+          <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <Info className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h3 className="font-heading font-semibold text-foreground">How to Place an Order</h3>
+            <p className="text-sm text-muted-foreground mt-1">Follow these simple steps to boost your social media</p>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <div className="flex items-start gap-3 p-3 bg-secondary/50 rounded-xl">
+            <div className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold flex-shrink-0">1</div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Select your platform</p>
+              <p className="text-xs text-muted-foreground">Choose Instagram, TikTok, YouTube, or any other platform you want to boost.</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3 p-3 bg-secondary/50 rounded-xl">
+            <div className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold flex-shrink-0">2</div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Pick a category & service</p>
+              <p className="text-xs text-muted-foreground">Browse through categories like Followers, Likes, Views, Comments, etc. and select the service that fits your needs.</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3 p-3 bg-secondary/50 rounded-xl">
+            <div className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold flex-shrink-0">3</div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Enter the correct URL</p>
+              <p className="text-xs text-muted-foreground">Paste the direct link to your post or profile. Make sure it's the full URL and your account is set to public.</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3 p-3 bg-secondary/50 rounded-xl">
+            <div className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold flex-shrink-0">4</div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Set quantity & place order</p>
+              <p className="text-xs text-muted-foreground">Choose how many followers/likes/views you want and click "Place Order". Your order will start processing immediately!</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Important Notice */}
+        <div className="mt-4 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-amber-700 dark:text-amber-400">Important: Use the Correct Link!</p>
+              <ul className="text-xs text-amber-600 dark:text-amber-500 mt-1 space-y-1">
+                <li>• Your account/post must be <strong>public</strong>, not private</li>
+                <li>• Copy the full URL directly from your browser or app</li>
+                <li>• For profile services, use your profile URL (e.g., instagram.com/username)</li>
+                <li>• For post services, use the specific post URL</li>
+                <li>• Wrong links cannot be refunded once the order starts</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* Tips */}
+        <div className="mt-4 p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
+          <div className="flex items-start gap-3">
+            <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-green-700 dark:text-green-400">Pro Tips</p>
+              <ul className="text-xs text-green-600 dark:text-green-500 mt-1 space-y-1">
+                <li>• Start with smaller orders to test the quality</li>
+                <li>• Spread large orders across multiple days for natural growth</li>
+                <li>• Check your order history to track delivery progress</li>
+                <li>• Contact support if your order takes longer than expected</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </motion.div>
     </div>
