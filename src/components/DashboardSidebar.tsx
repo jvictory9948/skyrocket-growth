@@ -145,7 +145,7 @@ export const DashboardSidebar = () => {
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex fixed top-0 left-0 bottom-0 w-64 bg-card border-r border-border flex-col z-40">
         {/* Logo */}
-        <div className="h-20 flex items-center px-6 border-b border-border">
+        <div className="h-20 flex items-center px-4 border-b border-border">
           <Link to="/dashboard" className="flex items-center gap-2">
             <img src={epikLogo} alt="Epik" className="h-16 w-auto" />
           </Link>
@@ -169,7 +169,7 @@ export const DashboardSidebar = () => {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-1">
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {navItems.map((item) => (
             <Link
               key={item.name}

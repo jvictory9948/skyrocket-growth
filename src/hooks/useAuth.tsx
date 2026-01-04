@@ -118,11 +118,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // so the email is marked confirmed immediately.
     try {
       const fnUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user`;
+      const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      console.log('create-user fnUrl:', fnUrl);
+      console.log('create-user publishableKey present:', Boolean(publishableKey));
+
       const resp = await fetch(fnUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
         body: JSON.stringify({ email, password, username }),
       });
+      const clone = resp.clone();
+      let bodyText = '';
+      try { bodyText = await clone.text(); } catch (e) { /* ignore */ }
+      console.log('create-user response status:', resp.status, 'body:', bodyText);
 
       const json = await resp.json();
       if (!resp.ok) {
