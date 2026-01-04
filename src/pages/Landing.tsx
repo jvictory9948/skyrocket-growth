@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Footer } from "@/components/Footer";
 import { socialIcons } from "@/components/icons/SocialIcons";
 import { useAuth } from "@/hooks/useAuth";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import epikLogo from "@/assets/epik-logo.png";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -342,6 +343,7 @@ const Landing = () => {
           </nav>
 
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             {user ? (
               <Link to="/dashboard">
                 <Button variant="default" size="sm">
