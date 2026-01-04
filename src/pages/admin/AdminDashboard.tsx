@@ -12,7 +12,8 @@ import {
   DollarSign,
   Share2,
   Wallet,
-  RefreshCcw
+  RefreshCcw,
+  Mail
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -312,11 +313,26 @@ const AdminDashboard = () => {
           </motion.div>
         </Link>
 
-        <Link to="/dashboard/admin/settings">
+        <Link to="/dashboard/admin/newsletter">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
+            className="bg-card rounded-xl border border-border p-6 hover:border-primary/50 transition-colors cursor-pointer"
+          >
+            <Mail className="h-8 w-8 text-primary mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">Newsletter</h3>
+            <p className="text-sm text-muted-foreground">
+              Manage newsletter subscribers.
+            </p>
+          </motion.div>
+        </Link>
+
+        <Link to="/dashboard/admin/settings">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.65 }}
             className="bg-card rounded-xl border border-border p-6 hover:border-primary/50 transition-colors cursor-pointer"
           >
             <Settings className="h-8 w-8 text-primary mb-4" />
