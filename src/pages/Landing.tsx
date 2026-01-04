@@ -30,6 +30,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import HowToOrderVideo from "@/components/HowToOrderVideo";
 
 const platforms = [
   { id: "instagram", name: "Instagram", color: "from-pink-500 to-purple-600" },
@@ -648,6 +649,11 @@ const Landing = () => {
                 </div>
               </motion.div>
             ))}
+          </div>
+
+          {/* Video Tutorial */}
+          <div className="mt-16 max-w-2xl mx-auto">
+            <HowToOrderVideo variant="landing" />
           </div>
         </div>
       </section>

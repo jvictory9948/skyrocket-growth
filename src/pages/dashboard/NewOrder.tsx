@@ -8,7 +8,7 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { socialIcons } from "@/components/icons/SocialIcons";
-
+import HowToOrderVideo from "@/components/HowToOrderVideo";
 interface ApiService {
   service: number;
   name: string;
@@ -264,11 +264,14 @@ const NewOrder = () => {
         </Button>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-2xl bg-card rounded-2xl shadow-card border border-border p-6 lg:p-8"
-      >
+      <div className="flex flex-col xl:flex-row gap-8">
+        {/* Main Order Form */}
+        <div className="flex-1">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-2xl bg-card rounded-2xl shadow-card border border-border p-6 lg:p-8"
+          >
         {/* Platform Selection */}
         <div className="mb-8">
           <label className="block text-sm font-medium text-foreground mb-4">
@@ -603,7 +606,16 @@ const NewOrder = () => {
             </div>
           </div>
         </div>
-      </motion.div>
+          </motion.div>
+        </div>
+        
+        {/* Video Sidebar */}
+        <div className="xl:w-80 flex-shrink-0">
+          <div className="xl:sticky xl:top-8">
+            <HowToOrderVideo variant="sidebar" />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
