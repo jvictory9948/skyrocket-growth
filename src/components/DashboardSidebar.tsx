@@ -57,12 +57,10 @@ export const DashboardSidebar = () => {
         <Link to="/dashboard" className="flex items-center gap-2">
           <img src={epikLogo} alt="Epik" className="h-14 w-auto" />
         </Link>
-        
+
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 bg-accent rounded-full pl-3 pr-1 py-1">
-            <span className="text-sm font-semibold text-foreground">
-              {formatAmount(profile?.balance || 0)}
-            </span>
+            <span className="text-sm font-semibold text-foreground">{formatAmount(profile?.balance || 0)}</span>
             <Link to="/dashboard/funds">
               <Button variant="icon" size="icon" className="h-7 w-7 bg-primary text-primary-foreground">
                 <Plus className="h-3 w-3" />
@@ -70,11 +68,7 @@ export const DashboardSidebar = () => {
             </Link>
           </div>
           <ThemeToggle />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsMobileOpen(!isMobileOpen)}
-          >
+          <Button variant="ghost" size="icon" onClick={() => setIsMobileOpen(!isMobileOpen)}>
             {isMobileOpen ? <X /> : <Menu />}
           </Button>
         </div>
@@ -98,19 +92,6 @@ export const DashboardSidebar = () => {
         transition={{ type: "spring", damping: 20 }}
         className="lg:hidden fixed top-16 left-0 bottom-0 w-64 bg-card border-r border-border z-50 p-4"
       >
-        {/* Logout at top */}
-        <div className="flex justify-end mb-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-muted-foreground hover:text-destructive"
-            onClick={handleSignOut}
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Logout
-          </Button>
-        </div>
-
         <nav className="space-y-1">
           {navItems.map((item) => (
             <Link
@@ -158,9 +139,7 @@ export const DashboardSidebar = () => {
           <div className="bg-accent rounded-xl p-4">
             <p className="text-xs text-muted-foreground mb-1">Your Balance</p>
             <div className="flex items-center justify-between">
-              <span className="text-2xl font-bold text-foreground">
-                {formatAmount(profile?.balance || 0)}
-              </span>
+              <span className="text-2xl font-bold text-foreground">{formatAmount(profile?.balance || 0)}</span>
               <Link to="/dashboard/funds">
                 <Button variant="default" size="sm">
                   <Plus className="h-4 w-4 mr-1" /> Add
@@ -185,10 +164,7 @@ export const DashboardSidebar = () => {
               <item.icon className="h-5 w-5" />
               {item.name}
               {isActive(item.href) && (
-                <motion.div
-                  layoutId="sidebar-indicator"
-                  className="ml-auto w-1.5 h-1.5 bg-primary rounded-full"
-                />
+                <motion.div layoutId="sidebar-indicator" className="ml-auto w-1.5 h-1.5 bg-primary rounded-full" />
               )}
             </Link>
           ))}
@@ -212,7 +188,18 @@ export const DashboardSidebar = () => {
             </Link>
           )}
         </nav>
-
+        {/* Logout at top */}
+        <div className="flex p-4 ">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground hover:text-destructive"
+            onClick={handleSignOut}
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Logout
+          </Button>
+        </div>
         {/* User Info & Theme */}
         <div className="p-4 border-t border-border">
           <div className="flex items-center justify-between">
@@ -221,9 +208,7 @@ export const DashboardSidebar = () => {
                 {profile?.username?.charAt(0).toUpperCase() || "U"}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">
-                  {profile?.username || "User"}
-                </p>
+                <p className="text-sm font-medium text-foreground truncate">{profile?.username || "User"}</p>
               </div>
             </div>
             <ThemeToggle />
