@@ -65,9 +65,9 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Send email via Resend
+    // Send email via Resend (using default sender until domain is verified)
     const emailResponse = await resend.emails.send({
-      from: "Epik <noreply@epikng.com>",
+      from: "Epik <onboarding@resend.dev>",
       to: [email],
       subject: "Reset Your Epik Password",
       html: `
@@ -85,35 +85,24 @@ const handler = async (req: Request): Promise<Response> => {
                   <table role="presentation" style="max-width: 480px; width: 100%; background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
                     <tr>
                       <td style="padding: 40px 32px; text-align: center;">
-                        <!-- Logo -->
                         <div style="margin-bottom: 24px;">
                           <h1 style="margin: 0; font-size: 32px; font-weight: 800; color: #7c3aed;">EPIK</h1>
                         </div>
-                        
-                        <!-- Heading -->
                         <h2 style="margin: 0 0 16px; font-size: 24px; font-weight: 700; color: #18181b;">
                           Reset Your Password
                         </h2>
-                        
-                        <!-- Description -->
                         <p style="margin: 0 0 32px; font-size: 16px; line-height: 1.6; color: #71717a;">
                           We received a request to reset your password. Click the button below to create a new password.
                         </p>
-                        
-                        <!-- Button -->
                         <a href="${resetLink}" 
                            style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; border-radius: 12px; box-shadow: 0 4px 14px 0 rgba(124, 58, 237, 0.3);">
                           Reset Password
                         </a>
-                        
-                        <!-- Note -->
                         <p style="margin: 32px 0 0; font-size: 14px; color: #a1a1aa;">
                           This link will expire in 24 hours. If you didn't request this, you can safely ignore this email.
                         </p>
                       </td>
                     </tr>
-                    
-                    <!-- Footer -->
                     <tr>
                       <td style="padding: 24px 32px; border-top: 1px solid #e4e4e7; text-align: center;">
                         <p style="margin: 0; font-size: 12px; color: #a1a1aa;">
@@ -130,7 +119,16 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
-    console.log("Password reset email sent successfully:", emailResponse);
+    // Check for Resend errors
+    if (emailResponse.error) {
+      console.error("Resend error:", emailResponse.error);
+      return new Response(
+        JSON.stringify({ success: false, message: "Failed to send email. Please try again." }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    console.log("Password reset email sent successfully:", emailResponse.data);
 
     return new Response(
       JSON.stringify({ success: true, message: "Password reset email sent." }),
