@@ -92,6 +92,19 @@ export const DashboardSidebar = () => {
         transition={{ type: "spring", damping: 20 }}
         className="lg:hidden fixed top-16 left-0 bottom-0 w-64 bg-card border-r border-border z-50 p-4"
       >
+        {/* Logout at top */}
+        <div className="flex justify-end mb-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground hover:text-destructive"
+            onClick={handleSignOut}
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Logout
+          </Button>
+        </div>
+
         <nav className="space-y-1">
           {navItems.map((item) => (
             <Link
@@ -188,18 +201,7 @@ export const DashboardSidebar = () => {
             </Link>
           )}
         </nav>
-        {/* Logout at top */}
-        <div className="flex p-4 ">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-muted-foreground hover:text-destructive"
-            onClick={handleSignOut}
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Logout
-          </Button>
-        </div>
+
         {/* User Info & Theme */}
         <div className="p-4 border-t border-border">
           <div className="flex items-center justify-between">
