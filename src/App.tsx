@@ -8,6 +8,8 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { CurrencyProvider } from "@/hooks/useCurrency";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Suspended from "./pages/Suspended";
 import About from "./pages/About";
 import Blog from "./pages/Blog";
@@ -55,6 +57,8 @@ const App = () => (
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/refund" element={<Refund />} />
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/suspended" element={<Suspended />} />
                 <Route path="/dashboard" element={<DashboardLayout />}>
                 <Route index element={<NewOrder />} />
