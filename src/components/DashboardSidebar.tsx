@@ -189,7 +189,7 @@ export const DashboardSidebar = () => {
           )}
         </nav>
         {/* Logout at top */}
-        <div className="flex justify-left mb-3">
+        <div className="flex justify-center mb-3">
           <Button
             variant="ghost"
             size="sm"
