@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
 import { Loader2, Mail, Lock, User, ArrowRight, ShieldCheck, Eye, EyeOff, Gift } from "lucide-react";
@@ -515,6 +515,23 @@ const Auth = () => {
                 )}
               </Button>
             </motion.div>
+
+            {/* Forgot Password Link */}
+            {isLogin && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                className="text-center mt-2"
+              >
+                <Link
+                  to="/forgot-password"
+                  className="text-xs text-primary hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </motion.div>
+            )}
           </form>
         </motion.div>
 
