@@ -91,18 +91,24 @@ serve(async (req) => {
 
     if (profileError) {
       console.error("Error deleting profile:", profileError);
+      // Continue anyway to delete auth user
     }
 
+    console.log(`Attempting to delete auth user ${userId}...`);
+    
     // Delete the auth user (this requires admin/service role)
-    const { error: authError } = await adminClient.auth.admin.deleteUser(userId);
+    const { data: deleteData, error: authError } = await adminClient.auth.admin.deleteUser(userId);
 
     if (authError) {
       console.error("Error deleting auth user:", authError);
+      console.error("Auth error details:", JSON.stringify(authError, null, 2));
       return new Response(
         JSON.stringify({ error: `Failed to delete auth user: ${authError.message}` }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    
+    console.log("Auth user delete response:", JSON.stringify(deleteData, null, 2));
 
     // Add to blocked emails if username/email provided
     if (email) {
