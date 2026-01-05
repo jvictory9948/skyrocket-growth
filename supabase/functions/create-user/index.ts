@@ -27,6 +27,21 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Check if email is blocked (deleted user)
+    const { data: blockedEmail } = await supabase
+      .from("blocked_emails")
+      .select("id")
+      .eq("email", email.toLowerCase())
+      .maybeSingle();
+
+    if (blockedEmail) {
+      console.log(`Blocked signup attempt for deleted email: ${email}`);
+      return new Response(JSON.stringify({ error: "This email address is not allowed to register" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Create the user via the admin API and confirm the email immediately
     const { data, error } = await supabase.auth.admin.createUser({
       email,

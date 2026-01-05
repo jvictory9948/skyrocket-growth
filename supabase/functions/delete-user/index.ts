@@ -51,6 +51,14 @@ serve(async (req) => {
     // Create admin client with service role
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
 
+    // First, get the user's email from auth before deleting
+    let userEmail = email;
+    if (!userEmail) {
+      const { data: authUser } = await adminClient.auth.admin.getUserById(userId);
+      userEmail = authUser?.user?.email;
+      console.log(`Retrieved email for user ${userId}: ${userEmail}`);
+    }
+
     // Delete related records first (in case cascade doesn't cover all)
     // These will be handled by cascade from profiles, but let's be explicit
     console.log(`Deleting user ${userId} and all related records...`);
@@ -110,15 +118,19 @@ serve(async (req) => {
     
     console.log("Auth user delete response:", JSON.stringify(deleteData, null, 2));
 
-    // Add to blocked emails if username/email provided
-    if (email) {
-      await adminClient
+    // Add to blocked emails to prevent re-registration
+    if (userEmail) {
+      const { error: blockError } = await adminClient
         .from("blocked_emails")
-        .insert({ email, reason: "Account deleted by admin" });
-    } else if (username) {
-      await adminClient
-        .from("blocked_emails")
-        .insert({ email: `${username}@blocked.local`, reason: "Account deleted by admin" });
+        .insert({ email: userEmail.toLowerCase(), reason: "Account deleted by admin" });
+      
+      if (blockError) {
+        console.error("Error blocking email:", blockError);
+      } else {
+        console.log(`Email ${userEmail} added to blocked list`);
+      }
+    } else {
+      console.warn("No email found to block for deleted user");
     }
 
     console.log(`User ${userId} deleted successfully`);
