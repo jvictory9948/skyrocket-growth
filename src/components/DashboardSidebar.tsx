@@ -189,7 +189,7 @@ export const DashboardSidebar = () => {
           )}
         </nav>
         {/* Logout at top */}
-        <div className="flex-1 p-4 space-y-1 overflow-y-auto">
+        <div className="flex p-4 ">
           <Button
             variant="ghost"
             size="sm"
