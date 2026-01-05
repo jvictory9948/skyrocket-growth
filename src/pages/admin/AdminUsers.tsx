@@ -209,23 +209,23 @@ const AdminUsers = () => {
   // Delete user mutation
   const deleteUserMutation = useMutation({
     mutationFn: async (user: UserProfile) => {
-      const { error: deleteError } = await supabase
-        .from("profiles")
-        .delete()
-        .eq("id", user.id);
-      
-      if (deleteError) throw deleteError;
+      // Call edge function to delete user and all related data
+      const { data, error } = await supabase.functions.invoke("delete-user", {
+        body: {
+          userId: user.id,
+          username: user.username,
+        },
+      });
 
-      if (user.username) {
-        await supabase
-          .from("blocked_emails")
-          .insert({ email: `${user.username}@blocked.local`, reason: "Account deleted by admin" })
-          .select();
-      }
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      
+      return user;
     },
-    onSuccess: () => {
+    onSuccess: (user) => {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
-      toast({ title: "User deleted successfully" });
+      toast({ title: "User deleted successfully", description: "User account and all related data have been removed." });
+      sendAdminActionNotification("User Deleted", user, undefined, "User account and all data permanently deleted");
       setDeleteUserId(null);
       setUserToDelete(null);
     },
