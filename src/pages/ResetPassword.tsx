@@ -38,46 +38,71 @@ const ResetPassword = () => {
   const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
 
   const [sessionReady, setSessionReady] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Listen for PASSWORD_RECOVERY event from Supabase
+  // Listen for PASSWORD_RECOVERY event from Supabase and handle URL tokens
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log("Auth event:", event);
-        if (event === "PASSWORD_RECOVERY") {
-          setSessionReady(true);
-        } else if (event === "SIGNED_IN" && session) {
-          setSessionReady(true);
-        }
-      }
-    );
+    const handleAuth = async () => {
+      console.log("ResetPassword: Starting auth check");
+      console.log("ResetPassword: URL hash:", window.location.hash);
+      console.log("ResetPassword: URL search:", window.location.search);
 
-    // Also check for existing session or URL tokens
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
+      // First, check if there's already a session
+      const { data: { session: existingSession } } = await supabase.auth.getSession();
+      console.log("ResetPassword: Existing session:", !!existingSession);
+      
+      if (existingSession) {
         setSessionReady(true);
+        setIsLoading(false);
         return;
       }
 
-      // Try to get session from URL hash (Supabase password recovery redirect)
+      // Try to extract tokens from URL hash (Supabase recovery redirect format)
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const accessToken = hashParams.get("access_token");
       const refreshToken = hashParams.get("refresh_token");
       const type = hashParams.get("type");
 
+      console.log("ResetPassword: URL type:", type);
+      console.log("ResetPassword: Has access token:", !!accessToken);
+      console.log("ResetPassword: Has refresh token:", !!refreshToken);
+
       if (accessToken && refreshToken) {
-        const { error } = await supabase.auth.setSession({
+        console.log("ResetPassword: Setting session from URL tokens");
+        const { data, error } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken,
         });
-        if (!error) {
+        
+        if (error) {
+          console.error("ResetPassword: Error setting session:", error);
+          setError("Invalid or expired reset link. Please request a new password reset.");
+        } else {
+          console.log("ResetPassword: Session set successfully");
           setSessionReady(true);
+          // Clear the hash from URL for cleaner display
+          window.history.replaceState(null, '', window.location.pathname);
         }
+      } else {
+        console.log("ResetPassword: No tokens found in URL");
+        setError("Invalid reset link. Please request a new password reset from the login page.");
       }
+      
+      setIsLoading(false);
     };
 
-    checkSession();
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log("ResetPassword: Auth event:", event);
+        if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session)) {
+          setSessionReady(true);
+          setIsLoading(false);
+        }
+      }
+    );
+
+    handleAuth();
 
     return () => subscription.unsubscribe();
   }, []);
@@ -163,7 +188,7 @@ const ResetPassword = () => {
             animate={{ opacity: 1, y: 0 }}
             className="text-muted-foreground mt-3 text-sm"
           >
-            {isSuccess ? "Password updated!" : "Create a new password"}
+            {isLoading ? "Verifying reset link..." : isSuccess ? "Password updated!" : "Create a new password"}
           </motion.p>
         </motion.div>
 
@@ -174,7 +199,12 @@ const ResetPassword = () => {
           transition={{ delay: 0.2 }}
           className="bg-card/80 backdrop-blur-sm rounded-2xl shadow-lg border border-border/50 p-6"
         >
-          {isSuccess ? (
+          {isLoading ? (
+            <div className="text-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+              <p className="text-sm text-muted-foreground">Verifying your reset link...</p>
+            </div>
+          ) : isSuccess ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -187,6 +217,25 @@ const ResetPassword = () => {
               <p className="text-sm text-muted-foreground">
                 Redirecting you to dashboard...
               </p>
+            </motion.div>
+          ) : !sessionReady && error ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center py-4"
+            >
+              <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mb-4">
+                <Lock className="h-8 w-8 text-destructive" />
+              </div>
+              <h2 className="text-lg font-semibold text-foreground mb-2">Invalid Reset Link</h2>
+              <p className="text-sm text-muted-foreground mb-4">{error}</p>
+              <Button
+                variant="outline"
+                onClick={() => navigate("/forgot-password")}
+                className="rounded-xl"
+              >
+                Request New Reset Link
+              </Button>
             </motion.div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -255,7 +304,7 @@ const ResetPassword = () => {
                 </div>
               </div>
 
-              {error && (
+              {error && sessionReady && (
                 <motion.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
