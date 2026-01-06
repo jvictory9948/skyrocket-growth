@@ -37,30 +37,59 @@ const ResetPassword = () => {
 
   const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
 
-  // Check if we have a valid session from the reset link
+  const [sessionReady, setSessionReady] = useState(false);
+
+  // Listen for PASSWORD_RECOVERY event from Supabase
   useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log("Auth event:", event);
+        if (event === "PASSWORD_RECOVERY") {
+          setSessionReady(true);
+        } else if (event === "SIGNED_IN" && session) {
+          setSessionReady(true);
+        }
+      }
+    );
+
+    // Also check for existing session or URL tokens
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        // Try to get session from URL hash (Supabase magic link redirect)
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const accessToken = hashParams.get("access_token");
-        const refreshToken = hashParams.get("refresh_token");
-        
-        if (accessToken && refreshToken) {
-          await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
+      if (session) {
+        setSessionReady(true);
+        return;
+      }
+
+      // Try to get session from URL hash (Supabase password recovery redirect)
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
+      const type = hashParams.get("type");
+
+      if (accessToken && refreshToken) {
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        if (!error) {
+          setSessionReady(true);
         }
       }
     };
+
     checkSession();
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (!sessionReady) {
+      setError("Invalid or expired reset link. Please request a new password reset.");
+      return;
+    }
 
     const result = passwordSchema.safeParse(password);
     if (!result.success) {
@@ -72,8 +101,6 @@ const ResetPassword = () => {
       setError("Passwords do not match");
       return;
     }
-
-    setIsSubmitting(true);
 
     try {
       const { error: updateError } = await supabase.auth.updateUser({
