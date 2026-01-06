@@ -188,18 +188,7 @@ export const DashboardSidebar = () => {
             </Link>
           )}
         </nav>
-        {/* Logout at top */}
-        <div className="flex p-4 ">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-muted-foreground hover:text-destructive"
-            onClick={handleSignOut}
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Logout
-          </Button>
-        </div>
+
         {/* User Info & Theme */}
         <div className="p-4 border-t border-border">
           <div className="flex items-center justify-between">
@@ -213,6 +202,15 @@ export const DashboardSidebar = () => {
             </div>
             <ThemeToggle />
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full mt-3 text-muted-foreground hover:text-destructive justify-start"
+            onClick={handleSignOut}
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Logout
+          </Button>
         </div>
       </aside>
     </>
