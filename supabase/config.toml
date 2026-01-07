@@ -33,5 +33,8 @@ verify_jwt = false
 [functions.send-password-reset]
 verify_jwt = false
 
+[functions.reset-password]
+verify_jwt = false
+
 [functions.delete-user]
 verify_jwt = false

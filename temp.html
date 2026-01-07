@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microsoft Login Replica - Single Page</title>
+    <style>
+        /* CSS Styles (same as before) */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+        }
+
+        .login-box {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        .microsoft-logo img {
+            width: 150px; /* Adjust size as needed */
+            margin-bottom: 20px;
+        }
+
+        .login-form h1 {
+            font-size: 1.8em;
+            margin-bottom: 10px;
+        }
+
+        .login-form p {
+            color: #555;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box; /* Important for width to include padding and border */
+            margin-bottom: 10px;
+        }
+
+        .form-group button {
+            background-color: #0067c0; /* Microsoft Blue */
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1em;
+        }
+
+        .form-group button:hover {
+            background-color: #0054a0; /* Darker Blue on hover */
+        }
+
+        .form-group a {
+            color: #0067c0;
+            text-decoration: none;
+        }
+
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            color: #777;
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="login-box">
+            <div class="microsoft-logo">
+                <img src="microsoft_logo.png" alt="Microsoft Logo">
+            </div>
+
+            <div class="login-form">
+                <h1>Sign in</h1>
+                <p>Use your Microsoft account</p>
+
+                <div class="form-group">
+                    <label for="email">Email, phone, or Skype</label>
+                    <input type="text" id="email" placeholder="Email, phone, or Skype">
+                </div>
+
+                <div class="form-group">
+                    <button id="nextButton">Next</button>
+                </div>
+
+                <div class="form-group">
+                    <p>
+                        <a href="#">Can't access your account?</a>
+                    </p>
+                </div>
+            </div>
+
+            <div class="footer">
+                <p>&copy; Microsoft 2024</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript (same as before)
+        document.getElementById('nextButton').addEventListener('click', function() {
+            const email = document.getElementById('email').value;
+
+            if (email.trim() === "") {
+                alert("Please enter your email, phone, or Skype.");
+                return;
+            }
+
+            // Simulate a basic check (replace with actual validation if needed)
+            if (email.includes('@')) {
+                alert("Email format is valid.  Navigating to password entry (simulated).");
+                // In a real implementation, you'd navigate to a password input page.
+            } else {
+                alert("Please enter a valid email, phone, or Skype.");
+            }
+        });
+    </script>
+</body>
+</html>
