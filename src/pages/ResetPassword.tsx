@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { z } from "zod";
 import { Loader2, Lock, Eye, EyeOff, CheckCircle } from "lucide-react";
@@ -28,93 +28,72 @@ const getPasswordStrength = (password: string): { score: number; label: string; 
 
 const ResetPassword = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token");
+
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isValidToken, setIsValidToken] = useState(false);
 
   const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
 
-  const [sessionReady, setSessionReady] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Listen for PASSWORD_RECOVERY event from Supabase and handle URL tokens
+  // Verify token on mount
   useEffect(() => {
-    const handleAuth = async () => {
-      console.log("ResetPassword: Starting auth check");
-      console.log("ResetPassword: URL hash:", window.location.hash);
-      console.log("ResetPassword: URL search:", window.location.search);
-
-      // First, check if there's already a session
-      const { data: { session: existingSession } } = await supabase.auth.getSession();
-      console.log("ResetPassword: Existing session:", !!existingSession);
-      
-      if (existingSession) {
-        setSessionReady(true);
+    const verifyToken = async () => {
+      if (!token) {
+        setError("No reset token provided. Please request a new password reset link.");
         setIsLoading(false);
         return;
       }
 
-      // Try to extract tokens from URL hash (Supabase recovery redirect format)
-      const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const accessToken = hashParams.get("access_token");
-      const refreshToken = hashParams.get("refresh_token");
-      const type = hashParams.get("type");
-
-      console.log("ResetPassword: URL type:", type);
-      console.log("ResetPassword: Has access token:", !!accessToken);
-      console.log("ResetPassword: Has refresh token:", !!refreshToken);
-
-      if (accessToken && refreshToken) {
-        console.log("ResetPassword: Setting session from URL tokens");
-        const { data, error } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
+      try {
+        console.log("Verifying token...");
+        const { data, error: fnError } = await supabase.functions.invoke("reset-password", {
+          body: { token },
+          headers: { "Content-Type": "application/json" },
         });
-        
-        if (error) {
-          console.error("ResetPassword: Error setting session:", error);
-          setError("Invalid or expired reset link. Please request a new password reset.");
+
+        // Add query param for verify action
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reset-password?action=verify`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            },
+            body: JSON.stringify({ token }),
+          }
+        );
+
+        const result = await response.json();
+
+        if (result.valid) {
+          console.log("Token is valid");
+          setIsValidToken(true);
         } else {
-          console.log("ResetPassword: Session set successfully");
-          setSessionReady(true);
-          // Clear the hash from URL for cleaner display
-          window.history.replaceState(null, '', window.location.pathname);
+          console.log("Token is invalid:", result.error);
+          setError(result.error || "Invalid or expired reset link. Please request a new one.");
         }
-      } else {
-        console.log("ResetPassword: No tokens found in URL");
-        setError("Invalid reset link. Please request a new password reset from the login page.");
+      } catch (err: any) {
+        console.error("Token verification error:", err);
+        setError("Failed to verify reset link. Please try again.");
+      } finally {
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
     };
 
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log("ResetPassword: Auth event:", event);
-        if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session)) {
-          setSessionReady(true);
-          setIsLoading(false);
-        }
-      }
-    );
-
-    handleAuth();
-
-    return () => subscription.unsubscribe();
-  }, []);
+    verifyToken();
+  }, [token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-
-    if (!sessionReady) {
-      setError("Invalid or expired reset link. Please request a new password reset.");
-      return;
-    }
 
     const result = passwordSchema.safeParse(password);
     if (!result.success) {
@@ -127,24 +106,36 @@ const ResetPassword = () => {
       return;
     }
 
-    try {
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: password,
-      });
+    setIsSubmitting(true);
 
-      if (updateError) {
-        throw updateError;
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reset-password`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ token, newPassword: password }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || data.error) {
+        throw new Error(data.error || "Failed to update password");
       }
 
       setIsSuccess(true);
       toast({
         title: "Password updated",
-        description: "Your password has been reset successfully.",
+        description: "Your password has been reset successfully. Please log in with your new password.",
       });
 
-      // Redirect to dashboard after 2 seconds
+      // Redirect to login after 2 seconds
       setTimeout(() => {
-        navigate("/dashboard");
+        navigate("/auth");
       }, 2000);
     } catch (err: any) {
       console.error("Password update error:", err);
@@ -215,10 +206,10 @@ const ResetPassword = () => {
               </div>
               <h2 className="text-lg font-semibold text-foreground mb-2">Password Updated</h2>
               <p className="text-sm text-muted-foreground">
-                Redirecting you to dashboard...
+                Redirecting you to login...
               </p>
             </motion.div>
-          ) : !sessionReady && error ? (
+          ) : !isValidToken && error ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -304,7 +295,7 @@ const ResetPassword = () => {
                 </div>
               </div>
 
-              {error && sessionReady && (
+              {error && isValidToken && (
                 <motion.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
