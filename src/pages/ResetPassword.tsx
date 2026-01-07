@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { z } from "zod";
 import { Loader2, Lock, Eye, EyeOff, CheckCircle } from "lucide-react";
@@ -28,35 +28,68 @@ const getPasswordStrength = (password: string): { score: number; label: string; 
 
 const ResetPassword = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token");
+
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isValidToken, setIsValidToken] = useState(false);
 
   const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
 
-  // Check if we have a valid session from the reset link
+  // Verify token on mount
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        // Try to get session from URL hash (Supabase magic link redirect)
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const accessToken = hashParams.get("access_token");
-        const refreshToken = hashParams.get("refresh_token");
-        
-        if (accessToken && refreshToken) {
-          await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
+    const verifyToken = async () => {
+      if (!token) {
+        setError("No reset token provided. Please request a new password reset link.");
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        console.log("Verifying token...");
+        const { data, error: fnError } = await supabase.functions.invoke("reset-password", {
+          body: { token },
+          headers: { "Content-Type": "application/json" },
+        });
+
+        // Add query param for verify action
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reset-password?action=verify`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            },
+            body: JSON.stringify({ token }),
+          }
+        );
+
+        const result = await response.json();
+
+        if (result.valid) {
+          console.log("Token is valid");
+          setIsValidToken(true);
+        } else {
+          console.log("Token is invalid:", result.error);
+          setError(result.error || "Invalid or expired reset link. Please request a new one.");
         }
+      } catch (err: any) {
+        console.error("Token verification error:", err);
+        setError("Failed to verify reset link. Please try again.");
+      } finally {
+        setIsLoading(false);
       }
     };
-    checkSession();
-  }, []);
+
+    verifyToken();
+  }, [token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,23 +109,33 @@ const ResetPassword = () => {
     setIsSubmitting(true);
 
     try {
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: password,
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reset-password`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ token, newPassword: password }),
+        }
+      );
 
-      if (updateError) {
-        throw updateError;
+      const data = await response.json();
+
+      if (!response.ok || data.error) {
+        throw new Error(data.error || "Failed to update password");
       }
 
       setIsSuccess(true);
       toast({
         title: "Password updated",
-        description: "Your password has been reset successfully.",
+        description: "Your password has been reset successfully. Please log in with your new password.",
       });
 
-      // Redirect to dashboard after 2 seconds
+      // Redirect to login after 2 seconds
       setTimeout(() => {
-        navigate("/dashboard");
+        navigate("/auth");
       }, 2000);
     } catch (err: any) {
       console.error("Password update error:", err);
@@ -136,7 +179,7 @@ const ResetPassword = () => {
             animate={{ opacity: 1, y: 0 }}
             className="text-muted-foreground mt-3 text-sm"
           >
-            {isSuccess ? "Password updated!" : "Create a new password"}
+            {isLoading ? "Verifying reset link..." : isSuccess ? "Password updated!" : "Create a new password"}
           </motion.p>
         </motion.div>
 
@@ -147,7 +190,12 @@ const ResetPassword = () => {
           transition={{ delay: 0.2 }}
           className="bg-card/80 backdrop-blur-sm rounded-2xl shadow-lg border border-border/50 p-6"
         >
-          {isSuccess ? (
+          {isLoading ? (
+            <div className="text-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+              <p className="text-sm text-muted-foreground">Verifying your reset link...</p>
+            </div>
+          ) : isSuccess ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -158,8 +206,27 @@ const ResetPassword = () => {
               </div>
               <h2 className="text-lg font-semibold text-foreground mb-2">Password Updated</h2>
               <p className="text-sm text-muted-foreground">
-                Redirecting you to dashboard...
+                Redirecting you to login...
               </p>
+            </motion.div>
+          ) : !isValidToken && error ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center py-4"
+            >
+              <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mb-4">
+                <Lock className="h-8 w-8 text-destructive" />
+              </div>
+              <h2 className="text-lg font-semibold text-foreground mb-2">Invalid Reset Link</h2>
+              <p className="text-sm text-muted-foreground mb-4">{error}</p>
+              <Button
+                variant="outline"
+                onClick={() => navigate("/forgot-password")}
+                className="rounded-xl"
+              >
+                Request New Reset Link
+              </Button>
             </motion.div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -228,7 +295,7 @@ const ResetPassword = () => {
                 </div>
               </div>
 
-              {error && (
+              {error && isValidToken && (
                 <motion.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
