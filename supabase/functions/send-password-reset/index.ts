@@ -12,6 +12,13 @@ interface PasswordResetRequest {
   redirectUrl: string;
 }
 
+// Generate a secure random token
+function generateToken(): string {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -40,27 +47,58 @@ const handler = async (req: Request): Promise<Response> => {
 
     const resend = new Resend(resendApiKey);
 
-    console.log("Generating password reset link for:", email);
+    console.log("Checking if user exists for:", email);
 
-    // Generate a password recovery link using Supabase Admin API
-    const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
-      type: "recovery",
-      email: email,
-      options: {
-        redirectTo: redirectUrl,
-      },
-    });
-
-    if (linkError) {
-      console.error("Error generating recovery link:", linkError);
-      // Don't expose whether the email exists or not
+    // Check if user exists (don't reveal if they don't)
+    const { data: users, error: userError } = await supabase.auth.admin.listUsers();
+    
+    if (userError) {
+      console.error("Error listing users:", userError);
+      // Return success anyway to not reveal user existence
       return new Response(
         JSON.stringify({ success: true, message: "If an account exists, a password reset email has been sent." }),
         { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    const resetLink = linkData.properties.action_link;
+    const userExists = users.users.some(u => u.email?.toLowerCase() === email.toLowerCase());
+    
+    if (!userExists) {
+      console.log("User not found, returning generic success");
+      return new Response(
+        JSON.stringify({ success: true, message: "If an account exists, a password reset email has been sent." }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Generate a custom token
+    const token = generateToken();
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+
+    console.log("Storing password reset token for:", email);
+
+    // Delete any existing tokens for this email
+    await supabase
+      .from("password_reset_tokens")
+      .delete()
+      .eq("email", email.toLowerCase());
+
+    // Store the token in the database
+    const { error: insertError } = await supabase
+      .from("password_reset_tokens")
+      .insert({
+        email: email.toLowerCase(),
+        token: token,
+        expires_at: expiresAt.toISOString(),
+      });
+
+    if (insertError) {
+      console.error("Error storing token:", insertError);
+      throw new Error("Failed to create reset token");
+    }
+
+    // Build the reset link with the custom token
+    const resetLink = `${redirectUrl}?token=${token}`;
     console.log("Reset link generated successfully");
 
     // Send custom email via Resend
