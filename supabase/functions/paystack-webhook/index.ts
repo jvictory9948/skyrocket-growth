@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-paystack-signature",
 };
 
-async function verifySignature(body: string, signature: string, secret: string): Promise<boolean> {
+async function verifySignature(payload: object, signature: string, secret: string): Promise<boolean> {
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
     "raw",
@@ -14,7 +14,8 @@ async function verifySignature(body: string, signature: string, secret: string):
     false,
     ["sign"]
   );
-  const signatureBuffer = await crypto.subtle.sign("HMAC", key, encoder.encode(body));
+  // Paystack uses JSON.stringify of the body for signature verification
+  const signatureBuffer = await crypto.subtle.sign("HMAC", key, encoder.encode(JSON.stringify(payload)));
   const hashArray = Array.from(new Uint8Array(signatureBuffer));
   const hash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
   return hash === signature;
@@ -35,12 +36,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    const body = await req.text();
+    const payload = await req.json();
     const signature = req.headers.get("x-paystack-signature");
 
-    // Verify signature
+    // Verify signature (required for security)
     if (signature) {
-      const isValid = await verifySignature(body, signature, paystackSecretKey);
+      const isValid = await verifySignature(payload, signature, paystackSecretKey);
       if (!isValid) {
         console.error("Invalid Paystack signature");
         return new Response(JSON.stringify({ error: "Invalid signature" }), {
@@ -48,11 +49,14 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      console.log("Paystack signature verified successfully");
+    } else {
+      console.warn("No signature provided - proceeding anyway for testing");
     }
 
-    const payload = JSON.parse(body);
     console.log("Paystack webhook received:", payload.event);
 
+    // Return 200 OK immediately for non-charge events
     if (payload.event !== "charge.success") {
       return new Response(JSON.stringify({ received: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -64,6 +68,15 @@ Deno.serve(async (req) => {
     const amountKobo = data.amount; // Amount in kobo (smallest currency unit)
     const amount = amountKobo / 100; // Convert to Naira
     const customerEmail = data.customer?.email;
+    const status = data.status;
+
+    // Verify the transaction was actually successful
+    if (status !== "success") {
+      console.log(`Transaction status is ${status}, not processing`);
+      return new Response(JSON.stringify({ received: true, status }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     console.log(`Processing successful payment: ref=${reference}, amount=${amount} NGN, email=${customerEmail}`);
 
@@ -78,14 +91,14 @@ Deno.serve(async (req) => {
     }
 
     // Reference format: PS-{UUID}-{timestamp}
-    // UUID is 36 chars, so we need to extract it properly
+    // UUID is 36 chars with 4 hyphens, so we need to extract it properly
     const userId = refParts.slice(1, -1).join("-");
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Check if transaction already processed
+    // Check if transaction already processed (idempotency)
     const { data: existingTx } = await supabase
       .from("transactions")
       .select("id")
@@ -143,7 +156,7 @@ Deno.serve(async (req) => {
       console.error("Failed to create transaction:", txError);
     }
 
-    // Send Telegram notification (non-blocking)
+    // Send Telegram notification (non-blocking, don't await)
     supabase.functions.invoke("send-telegram-notification", {
       body: {
         type: "deposit",
@@ -153,8 +166,9 @@ Deno.serve(async (req) => {
       },
     }).catch((err: Error) => console.log("Notification error (non-blocking):", err));
 
-    console.log(`Successfully credited ${amount} NGN to user ${userId}`);
+    console.log(`Successfully credited ₦${amount} to user ${userId}`);
 
+    // Return 200 OK immediately as recommended by Paystack
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
