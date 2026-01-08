@@ -39,6 +39,7 @@ const AdminPaymentMethods = () => {
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
   const [manualDetails, setManualDetails] = useState<ManualDetails>({});
   const [korapayPublicKey, setKorapayPublicKey] = useState("");
+  const [paystackPublicKey, setPaystackPublicKey] = useState("");
 
   const { data: paymentMethods, isLoading } = useQuery({
     queryKey: ["payment-methods-admin"],
@@ -52,13 +53,13 @@ const AdminPaymentMethods = () => {
     },
   });
 
-  const { data: korapaySettings } = useQuery({
-    queryKey: ["korapay-settings-admin"],
+  const { data: paymentGatewaySettings } = useQuery({
+    queryKey: ["payment-gateway-settings-admin"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("admin_settings")
         .select("setting_key, setting_value")
-        .in("setting_key", ["korapay_public_key"]);
+        .in("setting_key", ["korapay_public_key", "paystack_public_key"]);
       if (error) throw error;
       const settings: Record<string, string> = {};
       data.forEach((s) => {
@@ -79,10 +80,11 @@ const AdminPaymentMethods = () => {
   }, [paymentMethods]);
 
   useEffect(() => {
-    if (korapaySettings) {
-      setKorapayPublicKey(korapaySettings.korapay_public_key || "");
+    if (paymentGatewaySettings) {
+      setKorapayPublicKey(paymentGatewaySettings.korapay_public_key || "");
+      setPaystackPublicKey(paymentGatewaySettings.paystack_public_key || "");
     }
-  }, [korapaySettings]);
+  }, [paymentGatewaySettings]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -104,15 +106,20 @@ const AdminPaymentMethods = () => {
       // Save Korapay settings
       const { error: koraError } = await supabase
         .from("admin_settings")
-        .update({ setting_value: korapayPublicKey })
-        .eq("setting_key", "korapay_public_key");
+        .upsert({ setting_key: "korapay_public_key", setting_value: korapayPublicKey }, { onConflict: "setting_key" });
       if (koraError) throw koraError;
+
+      // Save Paystack settings
+      const { error: paystackError } = await supabase
+        .from("admin_settings")
+        .upsert({ setting_key: "paystack_public_key", setting_value: paystackPublicKey }, { onConflict: "setting_key" });
+      if (paystackError) throw paystackError;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payment-methods-admin"] });
       queryClient.invalidateQueries({ queryKey: ["payment-methods"] });
-      queryClient.invalidateQueries({ queryKey: ["korapay-settings-admin"] });
-      queryClient.invalidateQueries({ queryKey: ["korapay-settings"] });
+      queryClient.invalidateQueries({ queryKey: ["payment-gateway-settings-admin"] });
+      queryClient.invalidateQueries({ queryKey: ["payment-settings"] });
       toast({ title: "Saved", description: "Payment methods updated successfully." });
     },
     onError: (error: Error) => {
@@ -227,6 +234,54 @@ const AdminPaymentMethods = () => {
               </code>
               <p className="text-xs text-muted-foreground mt-2">
                 Add this URL in your Korapay dashboard under Webhook Settings.
+              </p>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Paystack Settings */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="bg-card rounded-2xl shadow-soft border border-border p-6"
+        >
+          <h3 className="text-lg font-semibold text-foreground mb-6">
+            Paystack Settings
+          </h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Configure your Paystack payment gateway. Get your API keys from the{" "}
+            <a
+              href="https://dashboard.paystack.com/#/settings/developer"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline"
+            >
+              Paystack Dashboard
+            </a>
+            .
+          </p>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Public Key
+              </label>
+              <Input
+                placeholder="pk_live_xxxxxxxxxxxxxxxx"
+                value={paystackPublicKey}
+                onChange={(e) => setPaystackPublicKey(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Your Paystack public key (starts with pk_live_ or pk_test_)
+              </p>
+            </div>
+            <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
+              <p className="text-sm text-foreground font-medium mb-2">Webhook URL</p>
+              <code className="text-xs bg-secondary px-2 py-1 rounded break-all">
+                {import.meta.env.VITE_SUPABASE_URL}/functions/v1/paystack-webhook
+              </code>
+              <p className="text-xs text-muted-foreground mt-2">
+                Add this URL in your Paystack dashboard under Settings → API Keys & Webhooks.
               </p>
             </div>
           </div>
