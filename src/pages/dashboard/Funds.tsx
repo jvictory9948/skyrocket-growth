@@ -523,7 +523,7 @@ const Funds = () => {
 
             <div className="mb-6">
               <label className="block text-sm font-medium text-foreground mb-2">
-                Amount {selectedMethod === "korapay" ? "(NGN)" : "(USD)"}
+                Amount {(selectedMethod === "korapay" || selectedMethod === "paystack") ? "(NGN)" : "(USD)"}
               </label>
               <Input
                 type="number"
