@@ -15,6 +15,9 @@ declare global {
       initialize: (config: KorapayConfig) => void;
       close: () => void;
     };
+    PaystackPop?: {
+      setup: (config: PaystackConfig) => { openIframe: () => void };
+    };
   }
 }
 
@@ -31,6 +34,16 @@ interface KorapayConfig {
   onClose?: () => void;
   onSuccess?: (data: { reference: string; status: string }) => void;
   onFailed?: (data: { reference: string; status: string }) => void;
+}
+
+interface PaystackConfig {
+  key: string;
+  email: string;
+  amount: number;
+  currency: string;
+  ref: string;
+  callback: (response: { reference: string; status: string }) => void;
+  onClose: () => void;
 }
 
 const iconMap: Record<string, React.FC<{ className?: string }>> = {
@@ -66,6 +79,7 @@ const Funds = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [korapayLoaded, setKorapayLoaded] = useState(false);
+  const [paystackLoaded, setPaystackLoaded] = useState(false);
 
   const { data: paymentMethods, isLoading: methodsLoading } = useQuery({
     queryKey: ["payment-methods"],
@@ -80,13 +94,13 @@ const Funds = () => {
     },
   });
 
-  const { data: korapaySettings } = useQuery({
-    queryKey: ["korapay-settings"],
+  const { data: paymentSettings } = useQuery({
+    queryKey: ["payment-settings"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("admin_settings")
         .select("setting_key, setting_value")
-        .in("setting_key", ["korapay_public_key"]);
+        .in("setting_key", ["korapay_public_key", "paystack_public_key"]);
       if (error) throw error;
       const settings: Record<string, string> = {};
       data.forEach((s) => {
@@ -107,6 +121,20 @@ const Funds = () => {
     script.src = "https://korablobstorage.blob.core.windows.net/modal-bucket/korapay-collections.min.js";
     script.async = true;
     script.onload = () => setKorapayLoaded(true);
+    document.body.appendChild(script);
+  }, []);
+
+  // Load Paystack script
+  useEffect(() => {
+    if (document.getElementById("paystack-script")) {
+      setPaystackLoaded(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.id = "paystack-script";
+    script.src = "https://js.paystack.co/v1/inline.js";
+    script.async = true;
+    script.onload = () => setPaystackLoaded(true);
     document.body.appendChild(script);
   }, []);
 
@@ -142,7 +170,7 @@ const Funds = () => {
     }
 
     if (selectedMethod === "korapay") {
-      if (!korapaySettings?.korapay_public_key) {
+      if (!paymentSettings?.korapay_public_key) {
         toast({
           title: "Configuration Error",
           description: "Korapay is not configured. Please contact support.",
@@ -165,7 +193,7 @@ const Funds = () => {
       const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/korapay-webhook`;
 
       window.Korapay.initialize({
-        key: korapaySettings.korapay_public_key,
+        key: paymentSettings.korapay_public_key,
         reference,
         amount: effectiveAmount,
         currency: "NGN",
@@ -195,6 +223,51 @@ const Funds = () => {
           });
         },
       });
+      return;
+    }
+
+    if (selectedMethod === "paystack") {
+      if (!paymentSettings?.paystack_public_key) {
+        toast({
+          title: "Configuration Error",
+          description: "Paystack is not configured. Please contact support.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!paystackLoaded || !window.PaystackPop) {
+        toast({
+          title: "Loading...",
+          description: "Payment gateway is loading. Please try again.",
+        });
+        return;
+      }
+
+      // Reference format: PS-{fullUserId}-{shortTimestamp}
+      const reference = `PS-${user.id}-${Date.now().toString().slice(-8)}`;
+
+      const handler = window.PaystackPop.setup({
+        key: paymentSettings.paystack_public_key,
+        email: user.email || "",
+        amount: effectiveAmount * 100, // Paystack uses kobo (smallest currency unit)
+        currency: "NGN",
+        ref: reference,
+        callback: (response) => {
+          console.log("Paystack success:", response);
+          toast({
+            title: "Payment Successful!",
+            description: "Your funds will be credited shortly.",
+          });
+          // Refresh profile after a short delay to allow webhook to process
+          setTimeout(() => refreshProfile(), 3000);
+        },
+        onClose: () => {
+          console.log("Paystack modal closed");
+        },
+      });
+
+      handler.openIframe();
       return;
     }
 
@@ -333,6 +406,18 @@ const Funds = () => {
               <CreditCard className="h-12 w-12 text-primary mx-auto mb-4" />
               <p className="text-muted-foreground">
                 Pay securely with your card or bank transfer via Korapay.
+              </p>
+              <p className="text-xs text-muted-foreground mt-2">
+                Supports Nigerian Naira (NGN) payments.
+              </p>
+            </div>
+          )}
+
+          {selectedMethod === "paystack" && (
+            <div className="text-center py-8">
+              <CreditCard className="h-12 w-12 text-primary mx-auto mb-4" />
+              <p className="text-muted-foreground">
+                Pay securely with your card, bank transfer, or USSD via Paystack.
               </p>
               <p className="text-xs text-muted-foreground mt-2">
                 Supports Nigerian Naira (NGN) payments.
