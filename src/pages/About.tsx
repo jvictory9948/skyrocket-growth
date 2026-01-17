@@ -3,6 +3,7 @@ import { ArrowLeft, Users, Target, Heart, Award } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Footer } from "@/components/Footer";
+import epikLogo from "@/assets/epik-logo.png";
 
 const values = [
   {
@@ -34,9 +35,7 @@ const About = () => {
       <header className="h-20 border-b border-border bg-card/50 backdrop-blur-sm fixed top-0 left-0 right-0 z-50">
         <div className="container mx-auto h-full flex items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-2">
-            <span className="text-3xl font-extrabold text-foreground tracking-tight">
-              E<span className="text-primary">p</span>ik
-            </span>
+            <img src={epikLogo} alt="Epik" className="h-10 md:h-12 w-auto" />
           </Link>
           <Link to="/">
             <Button variant="ghost" size="sm">

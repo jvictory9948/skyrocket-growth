@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Footer } from "@/components/Footer";
+import epikLogo from "@/assets/epik-logo.png";
 
 const benefits = [
   "Competitive salary & equity",
@@ -20,9 +21,7 @@ const Careers = () => {
       <header className="h-20 border-b border-border bg-card/50 backdrop-blur-sm fixed top-0 left-0 right-0 z-50">
         <div className="container mx-auto h-full flex items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-2">
-            <span className="text-3xl font-extrabold text-foreground tracking-tight">
-              E<span className="text-primary">p</span>ik
-            </span>
+            <img src={epikLogo} alt="Epik" className="h-10 md:h-12 w-auto" />
           </Link>
           <Link to="/">
             <Button variant="ghost" size="sm">
@@ -116,9 +115,11 @@ const Careers = () => {
             <p className="text-muted-foreground mb-6">
               Send us your resume and we'll keep you in mind for future opportunities.
             </p>
-            <Button>
-              Send Resume <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+            <a href="mailto:clyde@proton.me?subject=Job Application - Epik">
+              <Button>
+                <Mail className="mr-2 h-4 w-4" /> Send Resume
+              </Button>
+            </a>
           </motion.div>
         </div>
       </section>

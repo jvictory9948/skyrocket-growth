@@ -3,51 +3,8 @@ import { ArrowLeft, Calendar, Clock, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Footer } from "@/components/Footer";
-
-const blogPosts = [
-  {
-    title: "10 Proven Strategies to Grow Your Instagram in 2025",
-    excerpt: "Discover the latest techniques that top influencers use to skyrocket their Instagram following.",
-    date: "Dec 15, 2025",
-    readTime: "5 min read",
-    category: "Instagram",
-  },
-  {
-    title: "TikTok Algorithm Secrets: How to Go Viral",
-    excerpt: "Understanding the TikTok algorithm is key to getting your content seen by millions.",
-    date: "Dec 10, 2025",
-    readTime: "7 min read",
-    category: "TikTok",
-  },
-  {
-    title: "The Ultimate Guide to YouTube Shorts Success",
-    excerpt: "YouTube Shorts is the fastest-growing feature. Learn how to leverage it for massive growth.",
-    date: "Dec 5, 2025",
-    readTime: "6 min read",
-    category: "YouTube",
-  },
-  {
-    title: "Building Your Personal Brand on LinkedIn",
-    excerpt: "LinkedIn isn't just for job hunting. It's a powerful platform for establishing thought leadership.",
-    date: "Nov 28, 2025",
-    readTime: "8 min read",
-    category: "LinkedIn",
-  },
-  {
-    title: "Why Engagement Rate Matters More Than Follower Count",
-    excerpt: "Learn why brands are prioritizing engagement over followers when choosing influencers.",
-    date: "Nov 20, 2025",
-    readTime: "4 min read",
-    category: "Strategy",
-  },
-  {
-    title: "Social Media Trends to Watch in 2025",
-    excerpt: "Stay ahead of the curve with our predictions for the biggest social media trends this year.",
-    date: "Nov 15, 2025",
-    readTime: "10 min read",
-    category: "Trends",
-  },
-];
+import epikLogo from "@/assets/epik-logo.png";
+import { blogPostsData } from "./BlogPost";
 
 const Blog = () => {
   return (
@@ -56,9 +13,7 @@ const Blog = () => {
       <header className="h-20 border-b border-border bg-card/50 backdrop-blur-sm fixed top-0 left-0 right-0 z-50">
         <div className="container mx-auto h-full flex items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-2">
-            <span className="text-3xl font-extrabold text-foreground tracking-tight">
-              E<span className="text-primary">p</span>ik
-            </span>
+            <img src={epikLogo} alt="Epik" className="h-10 md:h-12 w-auto" />
           </Link>
           <Link to="/">
             <Button variant="ghost" size="sm">
@@ -90,9 +45,9 @@ const Blog = () => {
       <section className="py-12">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {blogPosts.map((post, index) => (
+            {blogPostsData.map((post, index) => (
               <motion.article
-                key={post.title}
+                key={post.slug}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -117,9 +72,11 @@ const Blog = () => {
                     {post.title}
                   </h2>
                   <p className="text-sm text-muted-foreground mb-4">{post.excerpt}</p>
-                  <Button variant="ghost" size="sm" className="group/btn">
-                    Read More <ArrowRight className="ml-1 h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
-                  </Button>
+                  <Link to={`/blog/${post.slug}`}>
+                    <Button variant="ghost" size="sm" className="group/btn">
+                      Read More <ArrowRight className="ml-1 h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
+                    </Button>
+                  </Link>
                 </div>
               </motion.article>
             ))}
