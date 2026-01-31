@@ -20,6 +20,8 @@ interface ApiService {
   max: string;
   refill: boolean;
   cancel: boolean;
+  provider_id?: string;
+  provider_name?: string;
 }
 
 interface GroupedServices {
@@ -251,6 +253,7 @@ const NewOrder = () => {
           baseCharge,
           link,
           quantity,
+          providerId: selectedService.provider_id,
         },
       });
 

@@ -38,6 +38,42 @@ export type Database = {
         }
         Relationships: []
       }
+      api_providers: {
+        Row: {
+          api_url: string
+          created_at: string
+          display_order: number
+          id: string
+          is_enabled: boolean
+          is_primary: boolean
+          name: string
+          provider_id: string
+          updated_at: string
+        }
+        Insert: {
+          api_url: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_enabled?: boolean
+          is_primary?: boolean
+          name: string
+          provider_id: string
+          updated_at?: string
+        }
+        Update: {
+          api_url?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_enabled?: boolean
+          is_primary?: boolean
+          name?: string
+          provider_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       blocked_emails: {
         Row: {
           blocked_at: string

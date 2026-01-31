@@ -36,6 +36,7 @@ import AdminSettings from "./pages/admin/AdminSettings";
 import AdminSocialLinks from "./pages/admin/AdminSocialLinks";
 import AdminPaymentMethods from "./pages/admin/AdminPaymentMethods";
 import AdminRefunds from "./pages/admin/AdminRefunds";
+import AdminApiProviders from "./pages/admin/AdminApiProviders";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -80,6 +81,7 @@ const App = () => (
                   <Route path="admin/social-links" element={<AdminSocialLinks />} />
                   <Route path="admin/payment-methods" element={<AdminPaymentMethods />} />
                   <Route path="admin/refunds" element={<AdminRefunds />} />
+                  <Route path="admin/api-providers" element={<AdminApiProviders />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>

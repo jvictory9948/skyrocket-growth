@@ -13,14 +13,9 @@ serve(async (req) => {
   }
 
   try {
-    const apiKey = Deno.env.get('REALLYSIMPLESOCIAL_API_KEY');
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
-    if (!apiKey) {
-      throw new Error('API key not configured');
-    }
 
     // Get auth header
     const authHeader = req.headers.get('Authorization');
@@ -56,11 +51,31 @@ serve(async (req) => {
     let insertedOrderVar: any = null;
     let newBalanceVar: number | null = null;
 
-    const { service, link, quantity, serviceName, platform, charge, baseCharge } = await req.json();
-    // Accept `baseCharge` (preferred) or `charge` for backwards compatibility
+    const { service, link, quantity, serviceName, platform, charge, baseCharge, providerId } = await req.json();
 
-    console.log(`Placing order: service=${service}, link=${link}, quantity=${quantity}`);
-    console.log('Received values:', { service, serviceName, platform, charge, baseCharge, quantity, link });
+    console.log(`Placing order: service=${service}, link=${link}, quantity=${quantity}, provider=${providerId}`);
+    console.log('Received values:', { service, serviceName, platform, charge, baseCharge, quantity, link, providerId });
+
+    // Get API configuration for the provider
+    const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
+    
+    let apiKey: string | undefined;
+    let apiUrl: string;
+    
+    // Determine which API to use
+    const resolvedProviderId = providerId || 'reallysimplesocial';
+    
+    if (resolvedProviderId === 'resellerprovider') {
+      apiKey = Deno.env.get('RESELLERPROVIDER_API_KEY');
+      apiUrl = 'https://resellerprovider.ru/api/v2';
+    } else {
+      apiKey = Deno.env.get('REALLYSIMPLESOCIAL_API_KEY');
+      apiUrl = 'https://reallysimplesocial.com/api/v2';
+    }
+    
+    if (!apiKey) {
+      throw new Error(`API key not configured for provider: ${resolvedProviderId}`);
+    }
 
     // Place order with external API
     const formData = new FormData();
@@ -70,7 +85,7 @@ serve(async (req) => {
     formData.append('link', link);
     formData.append('quantity', quantity.toString());
 
-    const response = await fetch('https://reallysimplesocial.com/api/v2', {
+    const response = await fetch(apiUrl, {
       method: 'POST',
       body: formData,
     });
@@ -92,7 +107,7 @@ serve(async (req) => {
     statusFormData.append('action', 'status');
     statusFormData.append('order', result.order.toString());
 
-    const statusResponse = await fetch('https://reallysimplesocial.com/api/v2', {
+    const statusResponse = await fetch(apiUrl, {
       method: 'POST',
       body: statusFormData,
     });
@@ -113,8 +128,6 @@ serve(async (req) => {
 
     // Send Telegram notification (fire and forget)
     try {
-      const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
-
       // Apply global markup and debit user atomically
       try {
         // Fetch global markup percentage
@@ -164,7 +177,7 @@ serve(async (req) => {
         console.log('Profile update result', { updatedProfile, updateErr });
         if (updateErr) throw updateErr;
 
-        // Insert order record
+        // Insert order record with provider info
         const { data: insertedOrder, error: insertErr } = await serviceClient
           .from('orders')
           .insert({
