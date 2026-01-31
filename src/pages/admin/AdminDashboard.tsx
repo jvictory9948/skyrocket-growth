@@ -12,7 +12,8 @@ import {
   DollarSign,
   Share2,
   Wallet,
-  RefreshCcw
+  RefreshCcw,
+  Server
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -308,6 +309,21 @@ const AdminDashboard = () => {
             <h3 className="text-lg font-semibold text-foreground mb-2">Refund Requests</h3>
             <p className="text-sm text-muted-foreground">
               Review and approve refunds.
+            </p>
+          </motion.div>
+        </Link>
+
+        <Link to="/dashboard/admin/api-providers">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="bg-card rounded-xl border border-border p-6 hover:border-primary/50 transition-colors cursor-pointer"
+          >
+            <Server className="h-8 w-8 text-primary mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">API Providers</h3>
+            <p className="text-sm text-muted-foreground">
+              Toggle SMM API providers on/off.
             </p>
           </motion.div>
         </Link>
