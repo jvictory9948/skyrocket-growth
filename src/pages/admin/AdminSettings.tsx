@@ -58,6 +58,7 @@ const AdminSettings = () => {
   // Other settings
   const [priceMarkup, setPriceMarkup] = useState("0");
   const [referralPercentage, setReferralPercentage] = useState("4");
+  const [usdToNgnRate, setUsdToNgnRate] = useState("1600");
   const [turnstileSiteKey, setTurnstileSiteKey] = useState("");
   const [reallySimpleApiKey, setReallySimpleApiKey] = useState("");
   
@@ -149,6 +150,7 @@ const AdminSettings = () => {
       setAdminActionChatId(settings.find(s => s.setting_key === "telegram_admin_action_chat_id")?.setting_value || "");
       setPriceMarkup(settings.find(s => s.setting_key === "price_markup_percentage")?.setting_value || "0");
       setReferralPercentage(settings.find(s => s.setting_key === "referral_percentage")?.setting_value || "4");
+      setUsdToNgnRate(settings.find(s => s.setting_key === "usd_to_ngn_rate")?.setting_value || "1600");
       setTurnstileSiteKey(settings.find(s => s.setting_key === "turnstile_site_key")?.setting_value || "");
       setReallySimpleApiKey(settings.find(s => s.setting_key === "reallysimplesocial_api_key")?.setting_value || "");
     }
@@ -166,6 +168,7 @@ const AdminSettings = () => {
         { setting_key: "telegram_admin_action_chat_id", setting_value: adminActionChatId },
         { setting_key: "price_markup_percentage", setting_value: priceMarkup },
         { setting_key: "referral_percentage", setting_value: referralPercentage },
+        { setting_key: "usd_to_ngn_rate", setting_value: usdToNgnRate },
         { setting_key: "turnstile_site_key", setting_value: turnstileSiteKey },
         { setting_key: "reallysimplesocial_api_key", setting_value: reallySimpleApiKey },
       ];
@@ -373,6 +376,45 @@ const AdminSettings = () => {
               <p className="text-sm text-muted-foreground">
                 <strong>Example:</strong> If a service costs ₦100 and markup is {priceMarkup || 0}%, 
                 users will see <strong>₦{(100 * (1 + (parseFloat(priceMarkup) || 0) / 100)).toFixed(2)}</strong>
+              </p>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* USD to NGN Conversion Rate */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.02 }}
+          className="bg-card rounded-xl border border-border p-6"
+        >
+          <div className="flex items-center gap-3 mb-6">
+            <DollarSign className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold text-foreground">USD to NGN Conversion</h2>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="usdToNgnRate">Conversion Rate (₦ per $1)</Label>
+              <Input
+                id="usdToNgnRate"
+                type="number"
+                min="1"
+                step="1"
+                placeholder="e.g., 1600"
+                value={usdToNgnRate}
+                onChange={(e) => setUsdToNgnRate(e.target.value)}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Used to convert USD prices from ResellerProvider API to NGN.
+              </p>
+            </div>
+
+            <div className="bg-secondary/50 rounded-lg p-4">
+              <p className="text-sm text-muted-foreground">
+                <strong>Example:</strong> If a service costs $0.20 and rate is ₦{usdToNgnRate || 1600}, 
+                base price is <strong>₦{(0.20 * (parseFloat(usdToNgnRate) || 1600)).toFixed(2)}</strong> per 1000
               </p>
             </div>
           </div>
