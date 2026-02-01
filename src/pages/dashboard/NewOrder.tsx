@@ -65,6 +65,7 @@ const NewOrder = () => {
   const [allServices, setAllServices] = useState<ApiService[]>([]);
   const [loadingServices, setLoadingServices] = useState(true);
   const [priceMarkup, setPriceMarkup] = useState(0);
+  const [usdToNgnRate, setUsdToNgnRate] = useState(1600);
   const [showFavorites, setShowFavorites] = useState(false);
   const [showPlatformDropdown, setShowPlatformDropdown] = useState(false);
   const platformDropdownRef = useRef<HTMLDivElement>(null);
@@ -88,22 +89,28 @@ const NewOrder = () => {
 
   useEffect(() => {
     fetchServices();
-    fetchPriceMarkup();
+    fetchPriceSettings();
   }, []);
 
-  const fetchPriceMarkup = async () => {
+  const fetchPriceSettings = async () => {
     try {
       const { data } = await supabase
         .from("admin_settings")
-        .select("setting_value")
-        .eq("setting_key", "price_markup_percentage")
-        .maybeSingle();
+        .select("setting_key, setting_value")
+        .in("setting_key", ["price_markup_percentage", "usd_to_ngn_rate"]);
       
-      if (data?.setting_value) {
-        setPriceMarkup(parseFloat(data.setting_value) || 0);
+      if (data) {
+        data.forEach(row => {
+          if (row.setting_key === "price_markup_percentage" && row.setting_value) {
+            setPriceMarkup(parseFloat(row.setting_value) || 0);
+          }
+          if (row.setting_key === "usd_to_ngn_rate" && row.setting_value) {
+            setUsdToNgnRate(parseFloat(row.setting_value) || 1600);
+          }
+        });
       }
     } catch (error) {
-      console.error("Failed to fetch price markup:", error);
+      console.error("Failed to fetch price settings:", error);
     }
   };
 
@@ -154,14 +161,20 @@ const NewOrder = () => {
   const categoryList = Object.keys(groupedCategories);
   const servicesInCategory = selectedCategory ? groupedCategories[selectedCategory] || [] : [];
 
-  // Apply markup to service rate
-  const getMarkedUpRate = (rate: string) => {
-    const baseRate = parseFloat(rate);
+  // Apply conversion (for USD providers) and markup to service rate
+  const getMarkedUpRate = (rate: string, providerId?: string) => {
+    let baseRate = parseFloat(rate);
+    
+    // Convert USD to NGN for resellerprovider
+    if (providerId === 'resellerprovider') {
+      baseRate = baseRate * usdToNgnRate;
+    }
+    
     return baseRate * (1 + priceMarkup / 100);
   };
 
   const totalPrice = selectedService
-    ? (getMarkedUpRate(selectedService.rate) * quantity) / 1000
+    ? (getMarkedUpRate(selectedService.rate, selectedService.provider_id) * quantity) / 1000
     : 0;
 
   const minQuantity = selectedService ? parseInt(selectedService.min) : 100;
@@ -518,7 +531,7 @@ const NewOrder = () => {
                 <option value="">Select a service...</option>
                 {servicesInCategory.map((service) => (
                   <option key={service.service} value={service.service}>
-                    {service.name} - ₦{getMarkedUpRate(service.rate).toFixed(2)}/1k (Min: {service.min})
+                    {service.name} - ₦{getMarkedUpRate(service.rate, service.provider_id).toFixed(2)}/1k (Min: {service.min})
                   </option>
                 ))}
               </select>
@@ -612,7 +625,7 @@ const NewOrder = () => {
               <div className="bg-secondary/50 rounded-xl p-4 text-sm">
                 <div className="grid grid-cols-2 gap-2 text-muted-foreground">
                   <span>Rate:</span>
-                  <span className="text-foreground">₦{getMarkedUpRate(selectedService.rate).toFixed(2)} per 1000</span>
+                  <span className="text-foreground">₦{getMarkedUpRate(selectedService.rate, selectedService.provider_id).toFixed(2)} per 1000</span>
                   <span>Refill:</span>
                   <span className="text-foreground">{selectedService.refill ? "Yes ✓" : "No"}</span>
                   <span>Cancel:</span>
