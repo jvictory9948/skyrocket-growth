@@ -565,57 +565,25 @@ const NewOrder = () => {
                 <label className="block text-sm font-medium text-foreground mb-3">
                   5. Set Quantity (Min: {minQuantity.toLocaleString()} - Max: {maxQuantity.toLocaleString()})
                 </label>
-                <div className="flex items-center gap-4">
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    onClick={() => handleQuantityChange(-1000)}
-                    className="rounded-full h-12 w-12"
-                  >
-                    <Minus className="h-5 w-5" />
-                  </Button>
-                  <div className="flex-1">
-                    <Input
-                      type="text"
-                      inputMode="numeric"
-                      value={quantity === 0 ? '' : quantity.toString()}
-                      onChange={(e) => {
-                        const rawValue = e.target.value.replace(/\D/g, '').replace(/^0+/, '');
-                        const val = rawValue === '' ? 0 : Number(rawValue);
-                        if (!isNaN(val)) {
-                          setQuantity(Math.min(maxQuantity, val));
-                        }
-                      }}
-                      onBlur={() => {
-                        if (quantity < minQuantity) {
-                          setQuantity(minQuantity);
-                        }
-                      }}
-                      className="text-center text-2xl font-bold h-14 bg-secondary border-border"
-                    />
-                  </div>
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    onClick={() => handleQuantityChange(1000)}
-                    className="rounded-full h-12 w-12"
-                  >
-                    <Plus className="h-5 w-5" />
-                  </Button>
-                </div>
-                <input
-                  type="range"
-                  min={minQuantity}
-                  max={maxQuantity}
-                  step={100}
-                  value={quantity}
-                  onChange={(e) => setQuantity(Number(e.target.value))}
-                  className="w-full mt-4 accent-primary"
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  value={quantity === 0 ? '' : quantity.toString()}
+                  onChange={(e) => {
+                    const rawValue = e.target.value.replace(/\D/g, '').replace(/^0+/, '');
+                    const val = rawValue === '' ? 0 : Number(rawValue);
+                    if (!isNaN(val)) {
+                      setQuantity(Math.min(maxQuantity, val));
+                    }
+                  }}
+                  onBlur={() => {
+                    if (quantity < minQuantity) {
+                      setQuantity(minQuantity);
+                    }
+                  }}
+                  placeholder={`Enter quantity (${minQuantity.toLocaleString()} - ${maxQuantity.toLocaleString()})`}
+                  className="text-center text-lg font-semibold h-12 bg-secondary border-border"
                 />
-                <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                  <span>{minQuantity.toLocaleString()}</span>
-                  <span>{maxQuantity.toLocaleString()}</span>
-                </div>
               </div>
 
               {/* Service Info */}
