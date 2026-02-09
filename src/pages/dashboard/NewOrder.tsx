@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link as LinkIcon, Loader2, Minus, Plus, Check, RefreshCw, Info, AlertCircle, CheckCircle2, Star, RotateCcw, ChevronDown } from "lucide-react";
+import { Link as LinkIcon, Loader2, Minus, Plus, Check, RefreshCw, Info, AlertCircle, CheckCircle2, Star, RotateCcw, ChevronDown, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
@@ -362,22 +362,35 @@ const NewOrder = () => {
                   {favorites.slice(0, 5).map((fav) => {
                     const Icon = socialIcons[fav.platform];
                     return (
-                      <motion.button
+                      <motion.div
                         key={fav.id}
                         whileHover={{ scale: 1.01 }}
                         whileTap={{ scale: 0.99 }}
-                        onClick={() => handleFavoriteSelect(fav)}
                         className="flex items-center gap-3 p-3 bg-secondary/50 hover:bg-accent rounded-xl text-left transition-all"
                       >
-                        <div className="h-8 w-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                          {Icon && <Icon className="h-4 w-4" />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">{fav.service_name}</p>
-                          <p className="text-xs text-muted-foreground capitalize">{fav.platform}</p>
-                        </div>
-                        <RotateCcw className="h-4 w-4 text-muted-foreground" />
-                      </motion.button>
+                        <button
+                          onClick={() => handleFavoriteSelect(fav)}
+                          className="flex items-center gap-3 flex-1 min-w-0"
+                        >
+                          <div className="h-8 w-8 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
+                            {Icon && <Icon className="h-4 w-4" />}
+                          </div>
+                          <div className="flex-1 min-w-0 text-left">
+                            <p className="text-sm font-medium text-foreground truncate">{fav.service_name}</p>
+                            <p className="text-xs text-muted-foreground capitalize">{fav.platform}</p>
+                          </div>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeFavorite(fav.service_id);
+                          }}
+                          className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors shrink-0"
+                          title="Remove from favorites"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </motion.div>
                     );
                   })}
                 </motion.div>
