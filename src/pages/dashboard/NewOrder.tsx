@@ -161,12 +161,14 @@ const NewOrder = () => {
   const categoryList = Object.keys(groupedCategories);
   const servicesInCategory = selectedCategory ? groupedCategories[selectedCategory] || [] : [];
 
-  // Apply USD to NGN conversion and markup to service rate
+  // Apply conversion (for USD providers) and markup to service rate
   const getMarkedUpRate = (rate: string, providerId?: string) => {
     let baseRate = parseFloat(rate);
     
-    // Convert USD to NGN for all providers
-    baseRate = baseRate * usdToNgnRate;
+    // Convert USD to NGN only for resellerprovider (foreign API using USD)
+    if (providerId === 'resellerprovider') {
+      baseRate = baseRate * usdToNgnRate;
+    }
     
     return baseRate * (1 + priceMarkup / 100);
   };
