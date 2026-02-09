@@ -479,28 +479,25 @@ const NewOrder = () => {
               {categoryList.length === 0 ? (
                 <p className="text-muted-foreground text-sm">No categories found for this platform.</p>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[200px] overflow-y-auto pr-2">
+                <select
+                  value={selectedCategory || ""}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      handleCategorySelect(e.target.value);
+                    } else {
+                      setSelectedCategory(null);
+                      setSelectedService(null);
+                    }
+                  }}
+                  className="w-full h-12 px-4 rounded-xl bg-secondary border border-border text-foreground focus:ring-2 focus:ring-primary focus:border-transparent transition-all appearance-none cursor-pointer"
+                >
+                  <option value="">Select a category...</option>
                   {categoryList.map((category) => (
-                    <motion.button
-                      key={category}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => handleCategorySelect(category)}
-                      className={`flex items-center justify-between p-3 rounded-xl text-left transition-all ${
-                        selectedCategory === category
-                          ? "bg-primary/10 ring-2 ring-primary"
-                          : "bg-secondary hover:bg-accent"
-                      }`}
-                    >
-                      <span className="text-sm font-medium text-foreground truncate pr-2">
-                        {category}
-                      </span>
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">
-                        {groupedCategories[category].length} services
-                      </span>
-                    </motion.button>
+                    <option key={category} value={category}>
+                      {category} ({groupedCategories[category].length} services)
+                    </option>
                   ))}
-                </div>
+                </select>
               )}
             </motion.div>
           )}
