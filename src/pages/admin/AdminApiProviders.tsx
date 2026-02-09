@@ -158,9 +158,9 @@ const AdminApiProviders = () => {
             transition={{ delay: index * 0.1 }}
             className="bg-card rounded-xl border border-border p-6"
           >
-            <div className="flex items-start justify-between">
+            <div className="flex flex-col gap-4">
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex flex-wrap items-center gap-2 mb-2">
                   <h3 className="text-lg font-semibold text-foreground">{provider.name}</h3>
                   {provider.is_primary && (
                     <Badge variant="default" className="flex items-center gap-1">
@@ -181,12 +181,12 @@ const AdminApiProviders = () => {
                 <p className="text-sm text-muted-foreground mb-1">
                   Provider ID: <code className="bg-secondary px-1 rounded">{provider.provider_id}</code>
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground break-all">
                   API URL: <code className="bg-secondary px-1 rounded text-xs">{provider.api_url}</code>
                 </p>
               </div>
               
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"

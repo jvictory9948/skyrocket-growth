@@ -341,7 +341,7 @@ const AdminSettings = () => {
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6 max-w-6xl">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 max-w-6xl">
         {/* Price Markup Settings */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -539,18 +539,21 @@ const AdminSettings = () => {
           </div>
 
           <Tabs defaultValue="main" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-4">
-              <TabsTrigger value="main" className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
-                Orders & Deposits
+            <TabsList className="grid w-full grid-cols-3 mb-4 h-auto">
+              <TabsTrigger value="main" className="flex items-center gap-1.5 text-xs sm:text-sm px-2 py-2">
+                <DollarSign className="h-3.5 w-3.5 shrink-0" />
+                <span className="hidden sm:inline">Orders & Deposits</span>
+                <span className="sm:hidden">Orders</span>
               </TabsTrigger>
-              <TabsTrigger value="signup" className="flex items-center gap-2">
-                <UserPlus className="h-4 w-4" />
-                User Signups
+              <TabsTrigger value="signup" className="flex items-center gap-1.5 text-xs sm:text-sm px-2 py-2">
+                <UserPlus className="h-3.5 w-3.5 shrink-0" />
+                <span className="hidden sm:inline">User Signups</span>
+                <span className="sm:hidden">Signups</span>
               </TabsTrigger>
-              <TabsTrigger value="admin" className="flex items-center gap-2">
-                <Shield className="h-4 w-4" />
-                Admin Actions
+              <TabsTrigger value="admin" className="flex items-center gap-1.5 text-xs sm:text-sm px-2 py-2">
+                <Shield className="h-3.5 w-3.5 shrink-0" />
+                <span className="hidden sm:inline">Admin Actions</span>
+                <span className="sm:hidden">Admin</span>
               </TabsTrigger>
             </TabsList>
 
@@ -669,7 +672,7 @@ const AdminSettings = () => {
           transition={{ delay: 0.2 }}
           className="bg-card rounded-xl border border-border p-6 lg:col-span-2"
         >
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
             <div className="flex items-center gap-3">
               <TrendingUp className="h-5 w-5 text-primary" />
               <h2 className="text-lg font-semibold text-foreground">Revenue Tracking</h2>
@@ -771,7 +774,7 @@ const AdminSettings = () => {
           {/* Duration selector */}
           <div className="mb-6">
             <Label htmlFor="cleanupDays" className="text-sm font-medium">Data older than (days)</Label>
-            <div className="flex items-center gap-4 mt-2">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-2">
               <Input
                 id="cleanupDays"
                 type="number"
@@ -781,7 +784,7 @@ const AdminSettings = () => {
                 onChange={(e) => setCleanupDays(Math.max(1, parseInt(e.target.value) || 30))}
                 className="w-24"
               />
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {[7, 14, 30, 60, 90].map((days) => (
                   <Button
                     key={days}
