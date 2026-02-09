@@ -582,7 +582,7 @@ const NewOrder = () => {
                     }
                   }}
                   placeholder={`Enter quantity (${minQuantity.toLocaleString()} - ${maxQuantity.toLocaleString()})`}
-                  className="text-center text-lg font-semibold h-12 bg-secondary border-border"
+                  className="text-center text-lg font-semibold h-12 bg-secondary border-border placeholder:text-xs placeholder:font-normal"
                 />
               </div>
 
