@@ -1,0 +1,1 @@
+UPDATE platforms SET keywords = ARRAY['twitter', 'tweet', 'x/twitter', 'x twitter'] WHERE platform_key = 'twitter';
