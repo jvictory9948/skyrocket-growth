@@ -8,7 +8,7 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { useFavorites } from "@/hooks/useFavorites";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { socialIcons } from "@/components/icons/SocialIcons";
+import { getPlatformIcon } from "@/components/icons/PlatformIcons";
 import HowToOrderVideo from "@/components/HowToOrderVideo";
 interface ApiService {
   service: number;
@@ -28,28 +28,15 @@ interface GroupedServices {
   [category: string]: ApiService[];
 }
 
-const platformKeywords: Record<string, string[]> = {
-  instagram: ["instagram", "ig ", "insta"],
-  tiktok: ["tiktok", "tik tok", "tt "],
-  youtube: ["youtube", "yt ", "youtuber"],
-  twitter: ["twitter", "tweet", "x "],
-  facebook: ["facebook", "fb "],
-  telegram: ["telegram", "tg "],
-  discord: ["discord"],
-  spotify: ["spotify"],
-  linkedin: ["linkedin"],
-};
-
-const platforms = [
-  { id: "instagram", name: "Instagram" },
-  { id: "tiktok", name: "TikTok" },
-  { id: "youtube", name: "YouTube" },
-  { id: "twitter", name: "Twitter" },
-  { id: "facebook", name: "Facebook" },
-  { id: "telegram", name: "Telegram" },
-  { id: "discord", name: "Discord" },
-  { id: "spotify", name: "Spotify" },
-];
+interface PlatformRecord {
+  id: string;
+  platform_key: string;
+  name: string;
+  keywords: string[];
+  is_enabled: boolean;
+  display_order: number;
+  icon_key: string | null;
+}
 
 const NewOrder = () => {
   const { user, profile, refreshProfile, userStatus } = useAuth();
@@ -69,6 +56,7 @@ const NewOrder = () => {
   const [showFavorites, setShowFavorites] = useState(false);
   const [showPlatformDropdown, setShowPlatformDropdown] = useState(false);
   const platformDropdownRef = useRef<HTMLDivElement>(null);
+  const [dbPlatforms, setDbPlatforms] = useState<PlatformRecord[]>([]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -90,6 +78,7 @@ const NewOrder = () => {
   useEffect(() => {
     fetchServices();
     fetchPriceSettings();
+    fetchPlatforms();
   }, []);
 
   const fetchPriceSettings = async () => {
@@ -136,12 +125,28 @@ const NewOrder = () => {
     }
   };
 
+  const fetchPlatforms = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("platforms")
+        .select("*")
+        .eq("is_enabled", true)
+        .order("display_order");
+      if (!error && data) {
+        setDbPlatforms(data as PlatformRecord[]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch platforms:", error);
+    }
+  };
+
   const getPlatformServices = (platformId: string): ApiService[] => {
-    const keywords = platformKeywords[platformId] || [];
+    const platform = dbPlatforms.find(p => p.platform_key === platformId);
+    const keywords = platform?.keywords || [];
     return allServices.filter((service) => {
       const name = service.name.toLowerCase();
       const category = service.category.toLowerCase();
-      return keywords.some((kw) => name.includes(kw) || category.includes(kw));
+      return keywords.some((kw) => name.includes(kw.toLowerCase()) || category.includes(kw.toLowerCase()));
     });
   };
 
@@ -360,7 +365,7 @@ const NewOrder = () => {
                   className="grid grid-cols-1 gap-2 mb-4"
                 >
                   {favorites.slice(0, 5).map((fav) => {
-                    const Icon = socialIcons[fav.platform];
+                    const Icon = getPlatformIcon(fav.platform);
                     return (
                       <motion.div
                         key={fav.id}
@@ -413,10 +418,10 @@ const NewOrder = () => {
               {selectedPlatform ? (
                 <>
                   <div className="h-8 w-8 bg-background rounded-lg flex items-center justify-center shrink-0">
-                    {socialIcons[selectedPlatform] && React.createElement(socialIcons[selectedPlatform], { className: "h-4 w-4" })}
+                    {React.createElement(getPlatformIcon(selectedPlatform), { className: "h-4 w-4" })}
                   </div>
                   <span className="text-sm font-medium text-foreground flex-1">
-                    {platforms.find(p => p.id === selectedPlatform)?.name}
+                    {dbPlatforms.find(p => p.platform_key === selectedPlatform)?.name}
                   </span>
                 </>
               ) : (
@@ -434,22 +439,22 @@ const NewOrder = () => {
                   className="absolute z-50 w-full mt-2 bg-popover border border-border rounded-xl shadow-lg overflow-hidden"
                 >
                   <div className="max-h-[280px] overflow-y-auto">
-                    {platforms.map((platform) => {
-                      const Icon = socialIcons[platform.id];
-                      const serviceCount = getPlatformServices(platform.id).length;
+                    {dbPlatforms.map((platform) => {
+                      const Icon = getPlatformIcon(platform.platform_key);
+                      const serviceCount = getPlatformServices(platform.platform_key).length;
                       return (
                         <button
                           key={platform.id}
                           onClick={() => {
-                            handlePlatformSelect(platform.id);
+                            handlePlatformSelect(platform.platform_key);
                             setShowPlatformDropdown(false);
                           }}
                           className={`w-full flex items-center gap-3 px-3 py-2.5 transition-all hover:bg-accent ${
-                            selectedPlatform === platform.id ? "bg-primary/10" : ""
+                            selectedPlatform === platform.platform_key ? "bg-primary/10" : ""
                           }`}
                         >
                           <div className="h-7 w-7 bg-background rounded-lg flex items-center justify-center shrink-0">
-                            {Icon && <Icon className="h-4 w-4" />}
+                            <Icon className="h-4 w-4" />
                           </div>
                           <span className="text-sm font-medium text-foreground flex-1 text-left">
                             {platform.name}
