@@ -143,10 +143,28 @@ const NewOrder = () => {
   const getPlatformServices = (platformId: string): ApiService[] => {
     const platform = dbPlatforms.find(p => p.platform_key === platformId);
     const keywords = platform?.keywords || [];
+    if (keywords.length === 0) return [];
+    
     return allServices.filter((service) => {
-      const name = service.name.toLowerCase();
       const category = service.category.toLowerCase();
-      return keywords.some((kw) => name.includes(kw.toLowerCase()) || category.includes(kw.toLowerCase()));
+      // First check if any keyword matches the category (strongest signal)
+      const categoryMatch = keywords.some((kw) => category.includes(kw.toLowerCase()));
+      if (categoryMatch) return true;
+      
+      // For name-only matches, ensure no OTHER platform's keywords match the category
+      // This prevents "Facebook" services from appearing under Instagram just because
+      // the service name mentions "facebook"
+      const name = service.name.toLowerCase();
+      const nameMatch = keywords.some((kw) => name.includes(kw.toLowerCase()));
+      if (!nameMatch) return false;
+      
+      // Check if another platform claims this service via category match
+      const claimedByOther = dbPlatforms.some((other) => {
+        if (other.platform_key === platformId) return false;
+        return (other.keywords || []).some((otherKw) => category.includes(otherKw.toLowerCase()));
+      });
+      
+      return !claimedByOther;
     });
   };
 
@@ -163,7 +181,7 @@ const NewOrder = () => {
 
   const platformServices = selectedPlatform ? getPlatformServices(selectedPlatform) : [];
   const groupedCategories = selectedPlatform ? getGroupedCategories(selectedPlatform) : {};
-  const categoryList = Object.keys(groupedCategories).sort((a, b) => a.localeCompare(b));
+  const categoryList = Object.keys(groupedCategories);
   const servicesInCategory = selectedCategory ? groupedCategories[selectedCategory] || [] : [];
 
   // Apply conversion (for USD providers) and markup to service rate
