@@ -158,7 +158,7 @@ const NewOrder = () => {
 
   const platformServices = selectedPlatform ? getPlatformServices(selectedPlatform) : [];
   const groupedCategories = selectedPlatform ? getGroupedCategories(selectedPlatform) : {};
-  const categoryList = Object.keys(groupedCategories);
+  const categoryList = Object.keys(groupedCategories).sort((a, b) => a.localeCompare(b));
   const servicesInCategory = selectedCategory ? groupedCategories[selectedCategory] || [] : [];
 
   // Apply conversion (for USD providers) and markup to service rate
