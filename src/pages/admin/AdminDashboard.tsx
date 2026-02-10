@@ -13,7 +13,8 @@ import {
   Share2,
   Wallet,
   RefreshCcw,
-  Server
+  Server,
+  Globe
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -324,6 +325,21 @@ const AdminDashboard = () => {
             <h3 className="text-lg font-semibold text-foreground mb-2">API Providers</h3>
             <p className="text-sm text-muted-foreground">
               Toggle SMM API providers on/off.
+            </p>
+          </motion.div>
+        </Link>
+
+        <Link to="/dashboard/admin/platforms">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.63 }}
+            className="bg-card rounded-xl border border-border p-6 hover:border-primary/50 transition-colors cursor-pointer"
+          >
+            <Globe className="h-8 w-8 text-primary mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">Platforms</h3>
+            <p className="text-sm text-muted-foreground">
+              Manage available social platforms.
             </p>
           </motion.div>
         </Link>
