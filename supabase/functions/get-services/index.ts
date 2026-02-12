@@ -120,29 +120,31 @@ serve(async (req) => {
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: params.toString(),
         });
-        
-        if (!response.ok) {
-          console.error(`API error for ${provider.name}: ${response.status}`);
+
+        console.log(`${provider.name} responded with status: ${response.status}`);
+
+        const responseText = await response.text();
+        console.log(`${provider.name} response preview: ${responseText.substring(0, 500)}`);
+
+        let services;
+        try {
+          services = JSON.parse(responseText);
+        } catch {
+          console.error(`${provider.name} returned non-JSON response`);
           continue;
         }
 
-        // Validate response is JSON before parsing
-        const contentType = response.headers.get('content-type');
-        if (!contentType?.includes('application/json')) {
-          const text = await response.text();
-          console.error(`${provider.name} returned non-JSON (${contentType}):`, text.substring(0, 200));
+        if (services && !Array.isArray(services) && services.error) {
+          console.error(`${provider.name} API error: ${services.error}`);
           continue;
         }
-        
-        const services = await response.json();
-        
+
         if (Array.isArray(services)) {
           const taggedServices = services.map((service: Service) => ({
             ...service,
             provider_id: provider.provider_id,
             provider_name: provider.name,
           }));
-          
           allServices.push(...taggedServices);
           console.log(`Fetched ${services.length} services from ${provider.name}`);
         }
