@@ -81,6 +81,7 @@ Deno.serve(async (req) => {
     // Create an instant order on Quidax to buy crypto (user pays fiat, receives crypto)
     // For accepting crypto payments, we use the payment address approach
     // Create a wallet address for the merchant's sub-account
+    const cryptoCurrency = currency || "btc";
     const QUIDAX_BASE = "https://app.quidax.io/api/v1";
 
     // Helper to safely parse JSON from Quidax responses
