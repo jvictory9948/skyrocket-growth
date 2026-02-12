@@ -81,11 +81,22 @@ Deno.serve(async (req) => {
     // Create an instant order on Quidax to buy crypto (user pays fiat, receives crypto)
     // For accepting crypto payments, we use the payment address approach
     // Create a wallet address for the merchant's sub-account
-    const cryptoCurrency = currency || "btc";
+    const QUIDAX_BASE = "https://app.quidax.io/api/v1";
+
+    // Helper to safely parse JSON from Quidax responses
+    async function safeJson(resp: Response) {
+      const ct = resp.headers.get("content-type") || "";
+      if (!ct.includes("application/json")) {
+        const text = await resp.text();
+        console.error("Non-JSON response from Quidax:", text.substring(0, 300));
+        throw new Error(`Quidax returned non-JSON (status ${resp.status})`);
+      }
+      return resp.json();
+    }
 
     // Fetch wallet address for receiving crypto
     const walletResponse = await fetch(
-      `https://www.quidax.com/api/v1/users/me/wallets/${cryptoCurrency}/addresses`,
+      `${QUIDAX_BASE}/users/me/wallets/${cryptoCurrency}/addresses`,
       {
         method: "POST",
         headers: {
@@ -96,13 +107,13 @@ Deno.serve(async (req) => {
       }
     );
 
-    const walletData = await walletResponse.json();
+    const walletData = await safeJson(walletResponse);
     console.log("Quidax wallet address response:", JSON.stringify(walletData));
 
     if (!walletResponse.ok || walletData.status !== "success") {
       // If address creation fails, try to get existing addresses
       const existingResponse = await fetch(
-        `https://www.quidax.com/api/v1/users/me/wallets/${cryptoCurrency}/addresses`,
+        `${QUIDAX_BASE}/users/me/wallets/${cryptoCurrency}/addresses`,
         {
           method: "GET",
           headers: {
@@ -112,7 +123,7 @@ Deno.serve(async (req) => {
         }
       );
 
-      const existingData = await existingResponse.json();
+      const existingData = await safeJson(existingResponse);
       console.log("Quidax existing addresses:", JSON.stringify(existingData));
 
       if (existingData.status === "success" && existingData.data?.length > 0) {
