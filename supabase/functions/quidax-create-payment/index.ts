@@ -1,0 +1,187 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Authenticate the user
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(
+      authHeader.replace("Bearer ", "")
+    );
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const userId = claimsData.claims.sub as string;
+
+    const { amount, currency } = await req.json();
+
+    if (!amount || amount <= 0) {
+      return new Response(JSON.stringify({ error: "Invalid amount" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Get Quidax secret key from admin_settings first, fallback to env
+    let quidaxSecretKey = Deno.env.get("QUIDAX_SECRET_KEY") || "";
+    const { data: settingData } = await supabase
+      .from("admin_settings")
+      .select("setting_value")
+      .eq("setting_key", "quidax_secret_key")
+      .single();
+    if (settingData?.setting_value) {
+      quidaxSecretKey = settingData.setting_value;
+    }
+
+    if (!quidaxSecretKey) {
+      return new Response(JSON.stringify({ error: "Quidax not configured" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Get user profile for metadata
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("username")
+      .eq("id", userId)
+      .single();
+
+    // Get user email
+    const { data: authUser } = await supabase.auth.admin.getUserById(userId);
+    const userEmail = authUser?.user?.email || "unknown";
+
+    // Create an instant order on Quidax to buy crypto (user pays fiat, receives crypto)
+    // For accepting crypto payments, we use the payment address approach
+    // Create a wallet address for the merchant's sub-account
+    const cryptoCurrency = currency || "btc";
+
+    // Fetch wallet address for receiving crypto
+    const walletResponse = await fetch(
+      `https://www.quidax.com/api/v1/users/me/wallets/${cryptoCurrency}/addresses`,
+      {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          Authorization: `Bearer ${quidaxSecretKey}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const walletData = await walletResponse.json();
+    console.log("Quidax wallet address response:", JSON.stringify(walletData));
+
+    if (!walletResponse.ok || walletData.status !== "success") {
+      // If address creation fails, try to get existing addresses
+      const existingResponse = await fetch(
+        `https://www.quidax.com/api/v1/users/me/wallets/${cryptoCurrency}/addresses`,
+        {
+          method: "GET",
+          headers: {
+            accept: "application/json",
+            Authorization: `Bearer ${quidaxSecretKey}`,
+          },
+        }
+      );
+
+      const existingData = await existingResponse.json();
+      console.log("Quidax existing addresses:", JSON.stringify(existingData));
+
+      if (existingData.status === "success" && existingData.data?.length > 0) {
+        const address = existingData.data[0];
+        return new Response(
+          JSON.stringify({
+            success: true,
+            address: address.address || address.destination_tag_or_memo,
+            network: address.network,
+            currency: cryptoCurrency.toUpperCase(),
+            amount,
+            userId,
+            reference: `QDX-${userId}-${Date.now().toString().slice(-8)}`,
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ error: "Failed to generate payment address", details: walletData }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const address = walletData.data;
+    const reference = `QDX-${userId}-${Date.now().toString().slice(-8)}`;
+
+    // Store pending payment info in admin_settings for webhook verification
+    await supabase.from("admin_settings").upsert(
+      {
+        setting_key: `quidax_pending_${reference}`,
+        setting_value: JSON.stringify({
+          userId,
+          username: profile?.username,
+          email: userEmail,
+          amount,
+          currency: cryptoCurrency,
+          reference,
+          createdAt: new Date().toISOString(),
+        }),
+      },
+      { onConflict: "setting_key" }
+    );
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        address: address.address || address.destination_tag_or_memo,
+        network: address.network,
+        currency: cryptoCurrency.toUpperCase(),
+        amount,
+        userId,
+        reference,
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  } catch (error) {
+    console.error("Quidax payment error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});

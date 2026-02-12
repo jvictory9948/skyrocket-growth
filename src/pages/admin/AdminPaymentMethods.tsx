@@ -40,6 +40,7 @@ const AdminPaymentMethods = () => {
   const [manualDetails, setManualDetails] = useState<ManualDetails>({});
   const [korapayPublicKey, setKorapayPublicKey] = useState("");
   const [paystackPublicKey, setPaystackPublicKey] = useState("");
+  const [quidaxSecretKey, setQuidaxSecretKey] = useState("");
 
   const { data: paymentMethods, isLoading } = useQuery({
     queryKey: ["payment-methods-admin"],
@@ -59,7 +60,7 @@ const AdminPaymentMethods = () => {
       const { data, error } = await supabase
         .from("admin_settings")
         .select("setting_key, setting_value")
-        .in("setting_key", ["korapay_public_key", "paystack_public_key"]);
+        .in("setting_key", ["korapay_public_key", "paystack_public_key", "quidax_secret_key"]);
       if (error) throw error;
       const settings: Record<string, string> = {};
       data.forEach((s) => {
@@ -83,6 +84,7 @@ const AdminPaymentMethods = () => {
     if (paymentGatewaySettings) {
       setKorapayPublicKey(paymentGatewaySettings.korapay_public_key || "");
       setPaystackPublicKey(paymentGatewaySettings.paystack_public_key || "");
+      setQuidaxSecretKey(paymentGatewaySettings.quidax_secret_key || "");
     }
   }, [paymentGatewaySettings]);
 
@@ -114,6 +116,12 @@ const AdminPaymentMethods = () => {
         .from("admin_settings")
         .upsert({ setting_key: "paystack_public_key", setting_value: paystackPublicKey }, { onConflict: "setting_key" });
       if (paystackError) throw paystackError;
+
+      // Save Quidax settings
+      const { error: quidaxError } = await supabase
+        .from("admin_settings")
+        .upsert({ setting_key: "quidax_secret_key", setting_value: quidaxSecretKey }, { onConflict: "setting_key" });
+      if (quidaxError) throw quidaxError;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payment-methods-admin"] });
@@ -282,6 +290,55 @@ const AdminPaymentMethods = () => {
               </code>
               <p className="text-xs text-muted-foreground mt-2">
                 Add this URL in your Paystack dashboard under Settings → API Keys & Webhooks.
+              </p>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Quidax Crypto Settings */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.18 }}
+          className="bg-card rounded-2xl shadow-soft border border-border p-6"
+        >
+          <h3 className="text-lg font-semibold text-foreground mb-6">
+            Quidax Crypto Settings
+          </h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Configure Quidax for accepting crypto payments. Get your API keys from the{" "}
+            <a
+              href="https://www.quidax.com/settings/api"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline"
+            >
+              Quidax Dashboard
+            </a>
+            .
+          </p>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Secret Key
+              </label>
+              <Input
+                type="password"
+                placeholder="qd_sk_xxxxxxxxxxxxxxxx"
+                value={quidaxSecretKey}
+                onChange={(e) => setQuidaxSecretKey(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Your Quidax secret API key for server-side operations.
+              </p>
+            </div>
+            <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
+              <p className="text-sm text-foreground font-medium mb-2">Webhook URL</p>
+              <code className="text-xs bg-secondary px-2 py-1 rounded break-all">
+                {import.meta.env.VITE_SUPABASE_URL}/functions/v1/quidax-webhook
+              </code>
+              <p className="text-xs text-muted-foreground mt-2">
+                Add this URL in your Quidax dashboard under Developer Settings → Webhook URL.
               </p>
             </div>
           </div>
