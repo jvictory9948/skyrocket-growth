@@ -67,6 +67,10 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Debug: log key source and metadata (not the full key)
+    const keySource = settingData?.setting_value ? "admin_settings" : "env";
+    console.log(`Quidax key source: ${keySource}, length: ${quidaxSecretKey.length}, prefix: ${quidaxSecretKey.substring(0, 6)}..., suffix: ...${quidaxSecretKey.substring(quidaxSecretKey.length - 4)}`);
+
     // Get user profile for metadata
     const { data: profile } = await supabase
       .from("profiles")
