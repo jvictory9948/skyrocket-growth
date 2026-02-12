@@ -37,11 +37,32 @@ serve(async (req) => {
     // Use service role to bypass RLS and access all orders
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const apiKey = await getApiKeyForProvider(supabase, 'reallysimplesocial');
-    
-    if (!apiKey) {
-      throw new Error('API key not configured');
+    // Fetch all enabled providers and their API keys
+    const { data: providers, error: provError } = await supabase
+      .from('api_providers')
+      .select('provider_id, name, api_url, is_enabled')
+      .eq('is_enabled', true);
+
+    if (provError) {
+      console.error('Error fetching providers:', provError);
+      throw provError;
     }
+
+    const providerMap: Record<string, { api_url: string; api_key: string }> = {};
+    for (const p of (providers || [])) {
+      const key = await getApiKeyForProvider(supabase, p.provider_id);
+      if (key) {
+        providerMap[p.provider_id] = { api_url: p.api_url, api_key: key };
+      }
+    }
+
+    if (Object.keys(providerMap).length === 0) {
+      throw new Error('No API providers configured with valid keys');
+    }
+
+    // Default provider for orders that don't have provider_id stored
+    const defaultProviderId = Object.keys(providerMap)[0];
+    console.log(`Loaded ${Object.keys(providerMap).length} providers, default: ${defaultProviderId}`);
 
     // Fetch all orders that need syncing (pending or processing)
     const { data: orders, error: fetchError } = await supabase
@@ -74,15 +95,24 @@ serve(async (req) => {
     // Sync each order
     for (const order of orders) {
       try {
-        // Fetch order status from API
-        const formData = new FormData();
-        formData.append('key', apiKey);
-        formData.append('action', 'status');
-        formData.append('order', order.external_order_id);
+        // Determine provider for this order (default to first available)
+        const providerInfo = providerMap[defaultProviderId];
+        if (!providerInfo) {
+          console.error(`No provider available for order ${order.id}`);
+          errorCount++;
+          continue;
+        }
 
-        const response = await fetch('https://reallysimplesocial.com/api/v2', {
+        // Fetch order status from API
+        const params = new URLSearchParams();
+        params.append('key', providerInfo.api_key);
+        params.append('action', 'status');
+        params.append('order', order.external_order_id);
+
+        const response = await fetch(providerInfo.api_url, {
           method: 'POST',
-          body: formData,
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: params.toString(),
         });
 
         const result = await response.json();
