@@ -111,13 +111,14 @@ serve(async (req) => {
         
         console.log(`Fetching services from ${provider.name}...`);
         
-        const formData = new FormData();
-        formData.append('key', apiKey);
-        formData.append('action', 'services');
+        const params = new URLSearchParams();
+        params.append('key', apiKey);
+        params.append('action', 'services');
         
         const response = await fetch(provider.api_url, {
           method: 'POST',
-          body: formData,
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: params.toString(),
         });
         
         if (!response.ok) {

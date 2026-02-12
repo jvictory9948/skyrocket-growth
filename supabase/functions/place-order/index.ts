@@ -96,16 +96,17 @@ serve(async (req) => {
     }
 
     // Place order with external API
-    const formData = new FormData();
-    formData.append('key', apiKey);
-    formData.append('action', 'add');
-    formData.append('service', service.toString());
-    formData.append('link', link);
-    formData.append('quantity', quantity.toString());
+    const params = new URLSearchParams();
+    params.append('key', apiKey);
+    params.append('action', 'add');
+    params.append('service', service.toString());
+    params.append('link', link);
+    params.append('quantity', quantity.toString());
 
     const response = await fetch(apiUrl, {
       method: 'POST',
-      body: formData,
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString(),
     });
 
     const result = await response.json();
@@ -120,14 +121,15 @@ serve(async (req) => {
     }
 
     // Fetch order status from API to get the actual status
-    const statusFormData = new FormData();
-    statusFormData.append('key', apiKey);
-    statusFormData.append('action', 'status');
-    statusFormData.append('order', result.order.toString());
+    const statusParams = new URLSearchParams();
+    statusParams.append('key', apiKey);
+    statusParams.append('action', 'status');
+    statusParams.append('order', result.order.toString());
 
     const statusResponse = await fetch(apiUrl, {
       method: 'POST',
-      body: statusFormData,
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: statusParams.toString(),
     });
 
     const statusResult = await statusResponse.json();
