@@ -1,69 +1,66 @@
 
 
-## Fix API Request Format: FormData to URLSearchParams
+## Fix ResellerProvider Returning 0 Services
 
 ### Problem
-All three edge functions use `new FormData()` to send requests to the SMM API providers. This sends the data as `multipart/form-data`, but the providers expect `application/x-www-form-urlencoded` (as confirmed by your successful curl test with `-d` flag).
+The `get-services` edge function currently:
+1. Rejects any response with a non-2xx HTTP status (`response.ok` check on line 124) -- ResellerProvider returns 401 but may still include valid service data
+2. Rejects responses without `application/json` content-type header (line 131) -- some providers return valid JSON with a different content-type
 
-Additionally, `sync-all-orders` is hardcoded to only use the ReallySimpleSocial API URL and key -- it doesn't support ResellerProvider orders at all.
+These two strict checks cause all ResellerProvider services to be silently skipped.
 
 ### Solution
+Update `supabase/functions/get-services/index.ts` to be more resilient:
+- Remove the `response.ok` gate -- always read the response body
+- Remove the `content-type` gate -- try to parse as JSON regardless
+- Add verbose logging of response status and body preview for debugging
+- Only skip if the parsed JSON contains an explicit `error` field
 
-Replace `FormData` with `URLSearchParams` in all three edge functions. `URLSearchParams` automatically sets the content type to `application/x-www-form-urlencoded`, matching what the APIs expect.
+### What Changes
 
-### Changes
+**File: `supabase/functions/get-services/index.ts`**
 
-**1. `supabase/functions/get-services/index.ts`**
-Replace:
+Replace lines 118-148 (the fetch + response handling block) with:
+
 ```typescript
-const formData = new FormData();
-formData.append('key', apiKey);
-formData.append('action', 'services');
-
-const response = await fetch(provider.api_url, {
-  method: 'POST',
-  body: formData,
-});
-```
-With:
-```typescript
-const params = new URLSearchParams();
-params.append('key', apiKey);
-params.append('action', 'services');
-
 const response = await fetch(provider.api_url, {
   method: 'POST',
   headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
   body: params.toString(),
 });
+
+console.log(`${provider.name} responded with status: ${response.status}`);
+
+const responseText = await response.text();
+console.log(`${provider.name} response preview: ${responseText.substring(0, 500)}`);
+
+let services;
+try {
+  services = JSON.parse(responseText);
+} catch {
+  console.error(`${provider.name} returned non-JSON response`);
+  continue;
+}
+
+if (services && !Array.isArray(services) && services.error) {
+  console.error(`${provider.name} API error: ${services.error}`);
+  continue;
+}
+
+if (Array.isArray(services)) {
+  const taggedServices = services.map((service: Service) => ({
+    ...service,
+    provider_id: provider.provider_id,
+    provider_name: provider.name,
+  }));
+  allServices.push(...taggedServices);
+  console.log(`Fetched ${services.length} services from ${provider.name}`);
+}
 ```
 
-**2. `supabase/functions/place-order/index.ts`**
-Same FormData-to-URLSearchParams change for both the order placement call and the status check call.
-
-**3. `supabase/functions/sync-all-orders/index.ts`**
-- Same FormData-to-URLSearchParams change
-- Fix hardcoded ReallySimpleSocial URL: look up each order's provider from the `orders` table (or store provider info on orders) so ResellerProvider orders sync correctly too
-
-### Technical Detail
-
-```text
-Before (multipart/form-data):
-  Content-Type: multipart/form-data; boundary=----WebKitFormBoundary...
-  ------WebKitFormBoundary...
-  Content-Disposition: form-data; name="key"
-  <api_key>
-  ...
-
-After (x-www-form-urlencoded):
-  Content-Type: application/x-www-form-urlencoded
-  key=<api_key>&action=services
-```
-
-This matches your working curl command exactly.
+### No Database Changes
+No schema or data changes required. Your `.env` is already pointing to the correct project (`zmfhnwlmtmucdogtixxm`).
 
 ### Files Changed
-- `supabase/functions/get-services/index.ts` -- URLSearchParams instead of FormData
-- `supabase/functions/place-order/index.ts` -- URLSearchParams instead of FormData (both add + status calls)
-- `supabase/functions/sync-all-orders/index.ts` -- URLSearchParams instead of FormData, plus fix hardcoded provider URL
+- `supabase/functions/get-services/index.ts` -- resilient response handling, verbose logging
 
