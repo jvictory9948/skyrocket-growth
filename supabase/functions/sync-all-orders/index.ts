@@ -6,6 +6,24 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+async function getApiKeyForProvider(
+  supabase: any,
+  providerId: string
+): Promise<string | undefined> {
+  const keyMap: Record<string, { dbKey: string; envKey: string }> = {
+    reallysimplesocial: { dbKey: "reallysimplesocial_api_key", envKey: "REALLYSIMPLESOCIAL_API_KEY" },
+    resellerprovider: { dbKey: "resellerprovider_api_key", envKey: "RESELLERPROVIDER_API_KEY" },
+  };
+  const mapping = keyMap[providerId];
+  if (!mapping) return undefined;
+  try {
+    const { data } = await supabase.from("admin_settings").select("setting_value").eq("setting_key", mapping.dbKey).maybeSingle();
+    if (data?.setting_value) { console.log(`Using API key from admin_settings for ${providerId}`); return data.setting_value; }
+  } catch (err) { console.warn(`Failed to read admin_settings for ${providerId}:`, err); }
+  console.log(`Using environment secret for ${providerId}`);
+  return Deno.env.get(mapping.envKey);
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -13,16 +31,17 @@ serve(async (req) => {
   }
 
   try {
-    const apiKey = Deno.env.get('REALLYSIMPLESOCIAL_API_KEY');
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+    // Use service role to bypass RLS and access all orders
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    const apiKey = await getApiKeyForProvider(supabase, 'reallysimplesocial');
     
     if (!apiKey) {
       throw new Error('API key not configured');
     }
-
-    // Use service role to bypass RLS and access all orders
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Fetch all orders that need syncing (pending or processing)
     const { data: orders, error: fetchError } = await supabase

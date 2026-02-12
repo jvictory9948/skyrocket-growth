@@ -28,8 +28,46 @@ interface Service {
   provider_name?: string;
 }
 
+async function getApiKeyForProvider(
+  supabase: any,
+  providerId: string
+): Promise<string | undefined> {
+  const keyMap: Record<string, { dbKey: string; envKey: string }> = {
+    reallysimplesocial: {
+      dbKey: "reallysimplesocial_api_key",
+      envKey: "REALLYSIMPLESOCIAL_API_KEY",
+    },
+    resellerprovider: {
+      dbKey: "resellerprovider_api_key",
+      envKey: "RESELLERPROVIDER_API_KEY",
+    },
+  };
+
+  const mapping = keyMap[providerId];
+  if (!mapping) return undefined;
+
+  // Try admin_settings first
+  try {
+    const { data } = await supabase
+      .from("admin_settings")
+      .select("setting_value")
+      .eq("setting_key", mapping.dbKey)
+      .maybeSingle();
+
+    if (data?.setting_value) {
+      console.log(`Using API key from admin_settings for ${providerId}`);
+      return data.setting_value;
+    }
+  } catch (err) {
+    console.warn(`Failed to read admin_settings for ${providerId}:`, err);
+  }
+
+  // Fallback to environment secret
+  console.log(`Using environment secret for ${providerId}`);
+  return Deno.env.get(mapping.envKey);
+}
+
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -40,7 +78,6 @@ serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    // Fetch enabled API providers
     const { data: providers, error: providersError } = await supabase
       .from('api_providers')
       .select('*')
@@ -63,10 +100,9 @@ serve(async (req) => {
     
     const allServices: Service[] = [];
     
-    // Fetch services from each enabled provider
     for (const provider of providers as ApiProvider[]) {
       try {
-        const apiKey = getApiKeyForProvider(provider.provider_id);
+        const apiKey = await getApiKeyForProvider(supabase, provider.provider_id);
         
         if (!apiKey) {
           console.warn(`No API key configured for provider: ${provider.provider_id}`);
@@ -88,11 +124,18 @@ serve(async (req) => {
           console.error(`API error for ${provider.name}: ${response.status}`);
           continue;
         }
+
+        // Validate response is JSON before parsing
+        const contentType = response.headers.get('content-type');
+        if (!contentType?.includes('application/json')) {
+          const text = await response.text();
+          console.error(`${provider.name} returned non-JSON (${contentType}):`, text.substring(0, 200));
+          continue;
+        }
         
         const services = await response.json();
         
         if (Array.isArray(services)) {
-          // Tag services with provider info
           const taggedServices = services.map((service: Service) => ({
             ...service,
             provider_id: provider.provider_id,
@@ -104,7 +147,6 @@ serve(async (req) => {
         }
       } catch (providerError) {
         console.error(`Error fetching from ${provider.name}:`, providerError);
-        // Continue with other providers
       }
     }
     
@@ -122,14 +164,3 @@ serve(async (req) => {
     });
   }
 });
-
-function getApiKeyForProvider(providerId: string): string | undefined {
-  switch (providerId) {
-    case 'reallysimplesocial':
-      return Deno.env.get('REALLYSIMPLESOCIAL_API_KEY');
-    case 'resellerprovider':
-      return Deno.env.get('RESELLERPROVIDER_API_KEY');
-    default:
-      return undefined;
-  }
-}
