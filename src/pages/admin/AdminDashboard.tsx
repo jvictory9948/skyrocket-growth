@@ -28,12 +28,13 @@ const AdminDashboard = () => {
   const { data: stats } = useQuery({
     queryKey: ["admin-stats"],
     queryFn: async () => {
-      const [usersRes, ordersRes, ticketsRes, markupRes, refundsRes] = await Promise.all([
+      const [usersRes, ordersRes, ticketsRes, markupRes, refundsRes, refundedOrdersRes] = await Promise.all([
         supabase.from("profiles").select("id, status", { count: "exact" }),
         supabase.from("orders").select("id, charge, created_at", { count: "exact" }),
         supabase.from("support_tickets").select("id, status", { count: "exact" }),
         supabase.from("admin_settings").select("setting_value").eq("setting_key", "price_markup_percentage").single(),
         supabase.from("refund_requests").select("id, status", { count: "exact" }),
+        supabase.from("orders").select("charge, created_at").eq("status", "refunded"),
       ]);
 
       const now = new Date();
@@ -55,16 +56,23 @@ const AdminDashboard = () => {
       const activeUsers = usersRes.data?.filter(u => u.status === 'active').length || 0;
       const totalOrders = ordersRes.count || 0;
       
-      // Calculate profit instead of total revenue
-      const totalProfit = ordersRes.data?.reduce((sum, o) => sum + calculateProfit(Number(o.charge)), 0) || 0;
+      // Calculate refund totals to subtract from profit
+      const totalRefunds = refundedOrdersRes.data?.reduce((sum, o) => sum + Number(o.charge), 0) || 0;
+      const dailyRefunds = refundedOrdersRes.data?.filter(o => new Date(o.created_at) >= startOfDay)
+        .reduce((sum, o) => sum + Number(o.charge), 0) || 0;
+      const monthlyRefunds = refundedOrdersRes.data?.filter(o => new Date(o.created_at) >= startOfMonth)
+        .reduce((sum, o) => sum + Number(o.charge), 0) || 0;
+
+      // Calculate profit minus refunds
+      const totalProfit = (ordersRes.data?.reduce((sum, o) => sum + calculateProfit(Number(o.charge)), 0) || 0) - totalRefunds;
       
       // Daily profit
-      const dailyProfit = ordersRes.data?.filter(o => new Date(o.created_at) >= startOfDay)
-        .reduce((sum, o) => sum + calculateProfit(Number(o.charge)), 0) || 0;
+      const dailyProfit = (ordersRes.data?.filter(o => new Date(o.created_at) >= startOfDay)
+        .reduce((sum, o) => sum + calculateProfit(Number(o.charge)), 0) || 0) - dailyRefunds;
       
       // Monthly profit
-      const monthlyProfit = ordersRes.data?.filter(o => new Date(o.created_at) >= startOfMonth)
-        .reduce((sum, o) => sum + calculateProfit(Number(o.charge)), 0) || 0;
+      const monthlyProfit = (ordersRes.data?.filter(o => new Date(o.created_at) >= startOfMonth)
+        .reduce((sum, o) => sum + calculateProfit(Number(o.charge)), 0) || 0) - monthlyRefunds;
 
       const openTickets = ticketsRes.data?.filter(t => t.status === 'open').length || 0;
       const pendingRefunds = refundsRes.data?.filter(r => r.status === 'pending').length || 0;

@@ -23,10 +23,17 @@ export const DashboardLayout = () => {
     }
   }, [user, loading, userStatus, navigate]);
 
-  // Protect admin routes
+  // Protect admin routes - only redirect non-admins, don't redirect on reload
   useEffect(() => {
     if (!loading && user && location.pathname.startsWith("/dashboard/admin") && !isAdmin) {
-      navigate("/dashboard");
+      // Wait for admin role check to complete before redirecting
+      // isAdmin starts as false and gets set async, so we need to ensure profile is loaded
+      const timer = setTimeout(() => {
+        if (!isAdmin) {
+          navigate("/dashboard");
+        }
+      }, 1000);
+      return () => clearTimeout(timer);
     }
   }, [user, loading, isAdmin, location.pathname, navigate]);
 
