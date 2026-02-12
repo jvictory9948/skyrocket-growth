@@ -95,8 +95,34 @@ Deno.serve(async (req) => {
       return resp.json();
     }
 
+    // Helper to fetch with timeout and retry
+    async function fetchWithRetry(url: string, options: RequestInit, retries = 2): Promise<Response> {
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 15000);
+          const resp = await fetch(url, { ...options, signal: controller.signal });
+          clearTimeout(timeout);
+          if (resp.status >= 500 && attempt < retries) {
+            console.warn(`Quidax returned ${resp.status}, retrying (${attempt + 1}/${retries})...`);
+            await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+            continue;
+          }
+          return resp;
+        } catch (err) {
+          if (attempt < retries) {
+            console.warn(`Quidax request failed, retrying (${attempt + 1}/${retries})...`, err);
+            await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+            continue;
+          }
+          throw err;
+        }
+      }
+      throw new Error("Quidax request failed after retries");
+    }
+
     // Fetch wallet address for receiving crypto
-    const walletResponse = await fetch(
+    const walletResponse = await fetchWithRetry(
       `${QUIDAX_BASE}/users/me/wallets/${cryptoCurrency}/addresses`,
       {
         method: "POST",
@@ -113,7 +139,7 @@ Deno.serve(async (req) => {
 
     if (!walletResponse.ok || walletData.status !== "success") {
       // If address creation fails, try to get existing addresses
-      const existingResponse = await fetch(
+      const existingResponse = await fetchWithRetry(
         `${QUIDAX_BASE}/users/me/wallets/${cryptoCurrency}/addresses`,
         {
           method: "GET",
