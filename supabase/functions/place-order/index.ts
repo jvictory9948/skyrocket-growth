@@ -6,6 +6,24 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+async function getApiKeyForProvider(
+  supabase: any,
+  providerId: string
+): Promise<string | undefined> {
+  const keyMap: Record<string, { dbKey: string; envKey: string }> = {
+    reallysimplesocial: { dbKey: "reallysimplesocial_api_key", envKey: "REALLYSIMPLESOCIAL_API_KEY" },
+    resellerprovider: { dbKey: "resellerprovider_api_key", envKey: "RESELLERPROVIDER_API_KEY" },
+  };
+  const mapping = keyMap[providerId];
+  if (!mapping) return undefined;
+  try {
+    const { data } = await supabase.from("admin_settings").select("setting_value").eq("setting_key", mapping.dbKey).maybeSingle();
+    if (data?.setting_value) { console.log(`Using API key from admin_settings for ${providerId}`); return data.setting_value; }
+  } catch (err) { console.warn(`Failed to read admin_settings for ${providerId}:`, err); }
+  console.log(`Using environment secret for ${providerId}`);
+  return Deno.env.get(mapping.envKey);
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -59,19 +77,19 @@ serve(async (req) => {
     // Get API configuration for the provider
     const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
     
-    let apiKey: string | undefined;
     let apiUrl: string;
     
     // Determine which API to use
     const resolvedProviderId = providerId || 'reallysimplesocial';
     
     if (resolvedProviderId === 'resellerprovider') {
-      apiKey = Deno.env.get('RESELLERPROVIDER_API_KEY');
       apiUrl = 'https://resellerprovider.ru/api/v2';
     } else {
-      apiKey = Deno.env.get('REALLYSIMPLESOCIAL_API_KEY');
       apiUrl = 'https://reallysimplesocial.com/api/v2';
     }
+
+    // Get API key from admin_settings first, then fall back to env secret
+    const apiKey = await getApiKeyForProvider(serviceClient, resolvedProviderId);
     
     if (!apiKey) {
       throw new Error(`API key not configured for provider: ${resolvedProviderId}`);

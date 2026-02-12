@@ -61,6 +61,7 @@ const AdminSettings = () => {
   const [usdToNgnRate, setUsdToNgnRate] = useState("1600");
   const [turnstileSiteKey, setTurnstileSiteKey] = useState("");
   const [reallySimpleApiKey, setReallySimpleApiKey] = useState("");
+  const [resellerProviderApiKey, setResellerProviderApiKey] = useState("");
   
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState<string | null>(null);
@@ -153,6 +154,7 @@ const AdminSettings = () => {
       setUsdToNgnRate(settings.find(s => s.setting_key === "usd_to_ngn_rate")?.setting_value || "1600");
       setTurnstileSiteKey(settings.find(s => s.setting_key === "turnstile_site_key")?.setting_value || "");
       setReallySimpleApiKey(settings.find(s => s.setting_key === "reallysimplesocial_api_key")?.setting_value || "");
+      setResellerProviderApiKey(settings.find(s => s.setting_key === "resellerprovider_api_key")?.setting_value || "");
     }
   }, [settings]);
 
@@ -171,6 +173,7 @@ const AdminSettings = () => {
         { setting_key: "usd_to_ngn_rate", setting_value: usdToNgnRate },
         { setting_key: "turnstile_site_key", setting_value: turnstileSiteKey },
         { setting_key: "reallysimplesocial_api_key", setting_value: reallySimpleApiKey },
+        { setting_key: "resellerprovider_api_key", setting_value: resellerProviderApiKey },
       ];
 
       // Use upsert to create or update settings by key
@@ -518,9 +521,27 @@ const AdminSettings = () => {
                 className="mt-1"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Stored in `admin_settings` as <strong>reallysimplesocial_api_key</strong>.
-                Note: Edge Functions read the environment variable <strong>REALLYSIMPLESOCIAL_API_KEY</strong> —
-                update the function secret or redeploy functions to pick up this DB value if needed.
+                Used by edge functions to fetch services and place orders via ReallySimpleSocial.
+              </p>
+            </div>
+
+            <div>
+              <Label htmlFor="rpApiKey">ResellerProvider API Key</Label>
+              <Input
+                id="rpApiKey"
+                placeholder="Enter your ResellerProvider API key"
+                value={resellerProviderApiKey}
+                onChange={(e) => setResellerProviderApiKey(e.target.value)}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Used by edge functions to fetch services and place orders via ResellerProvider.
+              </p>
+            </div>
+
+            <div className="bg-secondary/50 rounded-lg p-4">
+              <p className="text-sm text-muted-foreground">
+                API keys saved here are used by edge functions directly. No need to update environment secrets separately.
               </p>
             </div>
           </div>
