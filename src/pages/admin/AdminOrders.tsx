@@ -268,7 +268,7 @@ const AdminOrders = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-card rounded-xl border border-border p-4">
           <p className="text-sm text-muted-foreground">Total Orders</p>
           <p className="text-2xl font-bold text-foreground">{orders?.length || 0}</p>
@@ -310,8 +310,43 @@ const AdminOrders = () => {
         </Select>
       </div>
 
-      {/* Orders Table */}
-      <div className="bg-card rounded-xl border border-border overflow-hidden">
+      {/* Orders - Mobile Cards + Desktop Table */}
+      {/* Mobile card view */}
+      <div className="block lg:hidden space-y-3">
+        {isLoading ? (
+          <div className="p-8 text-center text-muted-foreground">Loading orders...</div>
+        ) : filteredOrders?.length === 0 ? (
+          <div className="p-8 text-center text-muted-foreground">No orders found.</div>
+        ) : (
+          filteredOrders?.map((order, index) => (
+            <motion.div
+              key={order.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.02 }}
+              className="bg-card rounded-xl border border-border p-4 space-y-3"
+              onClick={() => setSelectedOrder(order)}
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-sm text-muted-foreground">#{order.id.slice(0, 8)}</span>
+                {getStatusBadge(order.status)}
+              </div>
+              <p className="font-medium text-foreground text-sm truncate">{order.service}</p>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">{order.profiles?.username || "Unknown"}</span>
+                <span className="font-medium text-foreground">{formatAmount(order.charge)}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>{order.platform}</span>
+                <span>{new Date(order.created_at).toLocaleDateString()}</span>
+              </div>
+            </motion.div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop table view */}
+      <div className="hidden lg:block bg-card rounded-xl border border-border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -330,15 +365,11 @@ const AdminOrders = () => {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={9} className="p-8 text-center text-muted-foreground">
-                    Loading orders...
-                  </td>
+                  <td colSpan={9} className="p-8 text-center text-muted-foreground">Loading orders...</td>
                 </tr>
               ) : filteredOrders?.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="p-8 text-center text-muted-foreground">
-                    No orders found.
-                  </td>
+                  <td colSpan={9} className="p-8 text-center text-muted-foreground">No orders found.</td>
                 </tr>
               ) : (
                 filteredOrders?.map((order, index) => (
@@ -350,19 +381,13 @@ const AdminOrders = () => {
                     className="border-b border-border last:border-0 hover:bg-accent/30"
                   >
                     <td className="p-4">
-                      <span className="font-mono text-sm text-muted-foreground">
-                        #{order.id.slice(0, 8)}
-                      </span>
+                      <span className="font-mono text-sm text-muted-foreground">#{order.id.slice(0, 8)}</span>
                     </td>
                     <td className="p-4">
-                      <span className="font-mono text-xs text-muted-foreground">
-                        {order.external_order_id || "-"}
-                      </span>
+                      <span className="font-mono text-xs text-muted-foreground">{order.external_order_id || "-"}</span>
                     </td>
                     <td className="p-4">
-                      <span className="font-medium text-foreground">
-                        {order.profiles?.username || order.profiles?.full_name || "Unknown"}
-                      </span>
+                      <span className="font-medium text-foreground">{order.profiles?.username || order.profiles?.full_name || "Unknown"}</span>
                     </td>
                     <td className="p-4">
                       <div>
@@ -370,15 +395,9 @@ const AdminOrders = () => {
                         <p className="text-xs text-muted-foreground">{order.platform}</p>
                       </div>
                     </td>
-                    <td className="p-4">
-                      <span className="text-foreground">{order.quantity.toLocaleString()}</span>
-                    </td>
-                    <td className="p-4">
-                      <span className="font-medium text-foreground">{formatAmount(order.charge)}</span>
-                    </td>
-                    <td className="p-4">
-                      {getStatusBadge(order.status)}
-                    </td>
+                    <td className="p-4"><span className="text-foreground">{order.quantity.toLocaleString()}</span></td>
+                    <td className="p-4"><span className="font-medium text-foreground">{formatAmount(order.charge)}</span></td>
+                    <td className="p-4">{getStatusBadge(order.status)}</td>
                     <td className="p-4">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Calendar className="h-4 w-4" />
@@ -387,19 +406,8 @@ const AdminOrders = () => {
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setSelectedOrder(order)}
-                        >
-                          Manage
-                        </Button>
-                        <a
-                          href={order.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-muted-foreground hover:text-foreground"
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(order)}>Manage</Button>
+                        <a href={order.link} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground">
                           <ExternalLink className="h-4 w-4" />
                         </a>
                       </div>
