@@ -1,94 +1,69 @@
 
 
-## Fix API Key Management for Edge Functions
+## Fix API Request Format: FormData to URLSearchParams
 
 ### Problem
-1. The `get-services`, `place-order`, and `sync-all-orders` edge functions read API keys **only** from environment secrets (`Deno.env.get()`), never from the `admin_settings` database table.
-2. The admin settings page only has a field for `reallysimplesocial_api_key` -- there's no field for the ResellerProvider key.
-3. The functions don't validate the response content-type before parsing JSON, leading to cryptic errors when an API returns HTML.
+All three edge functions use `new FormData()` to send requests to the SMM API providers. This sends the data as `multipart/form-data`, but the providers expect `application/x-www-form-urlencoded` (as confirmed by your successful curl test with `-d` flag).
+
+Additionally, `sync-all-orders` is hardcoded to only use the ReallySimpleSocial API URL and key -- it doesn't support ResellerProvider orders at all.
 
 ### Solution
 
-**1. Update all 3 edge functions to read API keys from `admin_settings` first, falling back to environment secrets**
+Replace `FormData` with `URLSearchParams` in all three edge functions. `URLSearchParams` automatically sets the content type to `application/x-www-form-urlencoded`, matching what the APIs expect.
 
-Each function will query the database for the key before using the secret:
-- `get-services/index.ts` -- update `getApiKeyForProvider()` to check `admin_settings` first
-- `place-order/index.ts` -- same pattern
-- `sync-all-orders/index.ts` -- same pattern
+### Changes
 
-**2. Add response validation before JSON parsing**
-
-In `get-services`, check the response content-type before calling `.json()`. If the API returns HTML, log a clear error message instead of crashing.
-
-**3. Add ResellerProvider API key field to admin settings**
-
-Update `AdminSettings.tsx` to include a field for `resellerprovider_api_key`, so both provider keys can be managed from the admin panel.
-
-### Technical Details
-
-**Edge function key lookup (new pattern for all 3 functions):**
-
+**1. `supabase/functions/get-services/index.ts`**
+Replace:
 ```typescript
-async function getApiKeyForProvider(
-  supabase: any,
-  providerId: string
-): Promise<string | undefined> {
-  // Map provider_id to admin_settings key and env var name
-  const keyMap: Record<string, { dbKey: string; envKey: string }> = {
-    reallysimplesocial: {
-      dbKey: "reallysimplesocial_api_key",
-      envKey: "REALLYSIMPLESOCIAL_API_KEY",
-    },
-    resellerprovider: {
-      dbKey: "resellerprovider_api_key",
-      envKey: "RESELLERPROVIDER_API_KEY",
-    },
-  };
+const formData = new FormData();
+formData.append('key', apiKey);
+formData.append('action', 'services');
 
-  const mapping = keyMap[providerId];
-  if (!mapping) return undefined;
+const response = await fetch(provider.api_url, {
+  method: 'POST',
+  body: formData,
+});
+```
+With:
+```typescript
+const params = new URLSearchParams();
+params.append('key', apiKey);
+params.append('action', 'services');
 
-  // Try admin_settings first
-  const { data } = await supabase
-    .from("admin_settings")
-    .select("setting_value")
-    .eq("setting_key", mapping.dbKey)
-    .maybeSingle();
-
-  if (data?.setting_value) {
-    return data.setting_value;
-  }
-
-  // Fallback to environment secret
-  return Deno.env.get(mapping.envKey);
-}
+const response = await fetch(provider.api_url, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  body: params.toString(),
+});
 ```
 
-**Response validation (in get-services):**
+**2. `supabase/functions/place-order/index.ts`**
+Same FormData-to-URLSearchParams change for both the order placement call and the status check call.
 
-```typescript
-const contentType = response.headers.get("content-type");
-if (!contentType?.includes("application/json")) {
-  const text = await response.text();
-  console.error(
-    `${provider.name} returned non-JSON (${contentType}):`,
-    text.substring(0, 200)
-  );
-  continue;
-}
+**3. `supabase/functions/sync-all-orders/index.ts`**
+- Same FormData-to-URLSearchParams change
+- Fix hardcoded ReallySimpleSocial URL: look up each order's provider from the `orders` table (or store provider info on orders) so ResellerProvider orders sync correctly too
+
+### Technical Detail
+
+```text
+Before (multipart/form-data):
+  Content-Type: multipart/form-data; boundary=----WebKitFormBoundary...
+  ------WebKitFormBoundary...
+  Content-Disposition: form-data; name="key"
+  <api_key>
+  ...
+
+After (x-www-form-urlencoded):
+  Content-Type: application/x-www-form-urlencoded
+  key=<api_key>&action=services
 ```
 
-**Admin settings UI update:**
-- Add a `resellerProviderApiKey` state variable
-- Add an input field for it in the API Keys section
-- Include `resellerprovider_api_key` in the save mutation
+This matches your working curl command exactly.
 
 ### Files Changed
-- `supabase/functions/get-services/index.ts` -- DB-first key lookup + response validation
-- `supabase/functions/place-order/index.ts` -- DB-first key lookup
-- `supabase/functions/sync-all-orders/index.ts` -- DB-first key lookup
-- `src/pages/admin/AdminSettings.tsx` -- Add ResellerProvider API key field
-
-### RLS Consideration
-The `admin_settings` table already has an RLS policy allowing admin access. The edge functions use the service role key, so they bypass RLS and can read all settings. No RLS changes needed.
+- `supabase/functions/get-services/index.ts` -- URLSearchParams instead of FormData
+- `supabase/functions/place-order/index.ts` -- URLSearchParams instead of FormData (both add + status calls)
+- `supabase/functions/sync-all-orders/index.ts` -- URLSearchParams instead of FormData, plus fix hardcoded provider URL
 
