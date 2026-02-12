@@ -62,6 +62,7 @@ const AdminSettings = () => {
   const [turnstileSiteKey, setTurnstileSiteKey] = useState("");
   const [reallySimpleApiKey, setReallySimpleApiKey] = useState("");
   const [resellerProviderApiKey, setResellerProviderApiKey] = useState("");
+  const [quidaxSecretKey, setQuidaxSecretKey] = useState("");
   
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState<string | null>(null);
@@ -155,6 +156,7 @@ const AdminSettings = () => {
       setTurnstileSiteKey(settings.find(s => s.setting_key === "turnstile_site_key")?.setting_value || "");
       setReallySimpleApiKey(settings.find(s => s.setting_key === "reallysimplesocial_api_key")?.setting_value || "");
       setResellerProviderApiKey(settings.find(s => s.setting_key === "resellerprovider_api_key")?.setting_value || "");
+      setQuidaxSecretKey(settings.find(s => s.setting_key === "quidax_secret_key")?.setting_value || "");
     }
   }, [settings]);
 
@@ -174,6 +176,7 @@ const AdminSettings = () => {
         { setting_key: "turnstile_site_key", setting_value: turnstileSiteKey },
         { setting_key: "reallysimplesocial_api_key", setting_value: reallySimpleApiKey },
         { setting_key: "resellerprovider_api_key", setting_value: resellerProviderApiKey },
+        { setting_key: "quidax_secret_key", setting_value: quidaxSecretKey },
       ];
 
       // Use upsert to create or update settings by key
@@ -536,6 +539,21 @@ const AdminSettings = () => {
               />
               <p className="text-xs text-muted-foreground mt-1">
                 Used by edge functions to fetch services and place orders via ResellerProvider.
+              </p>
+            </div>
+
+            <div>
+              <Label htmlFor="quidaxKey">Quidax Secret Key</Label>
+              <Input
+                id="quidaxKey"
+                type="password"
+                placeholder="Enter your Quidax secret key"
+                value={quidaxSecretKey}
+                onChange={(e) => setQuidaxSecretKey(e.target.value)}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Used for crypto payment processing via Quidax. Get this from your Quidax Dashboard → Settings → API Keys.
               </p>
             </div>
 
