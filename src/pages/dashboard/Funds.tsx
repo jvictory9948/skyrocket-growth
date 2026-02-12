@@ -80,6 +80,13 @@ const Funds = () => {
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [korapayLoaded, setKorapayLoaded] = useState(false);
   const [paystackLoaded, setPaystackLoaded] = useState(false);
+  const [cryptoAddress, setCryptoAddress] = useState<{
+    address: string;
+    network?: string;
+    currency: string;
+    reference: string;
+  } | null>(null);
+  const [selectedCrypto, setSelectedCrypto] = useState("btc");
 
   const { data: paymentMethods, isLoading: methodsLoading } = useQuery({
     queryKey: ["payment-methods"],
@@ -100,7 +107,7 @@ const Funds = () => {
       const { data, error } = await supabase
         .from("admin_settings")
         .select("setting_key, setting_value")
-        .in("setting_key", ["korapay_public_key", "paystack_public_key"]);
+        .in("setting_key", ["korapay_public_key", "paystack_public_key", "quidax_enabled"]);
       if (error) throw error;
       const settings: Record<string, string> = {};
       data.forEach((s) => {
@@ -271,6 +278,40 @@ const Funds = () => {
       return;
     }
 
+    if (selectedMethod === "crypto") {
+      setIsLoading(true);
+      try {
+        const { data: result, error } = await supabase.functions.invoke("quidax-create-payment", {
+          body: { amount: effectiveAmount, currency: selectedCrypto },
+        });
+
+        if (error) throw error;
+        if (!result?.success) throw new Error(result?.error || "Failed to create payment");
+
+        setCryptoAddress({
+          address: result.address,
+          network: result.network,
+          currency: result.currency,
+          reference: result.reference,
+        });
+
+        toast({
+          title: "Payment Address Generated",
+          description: `Send ${selectedCrypto.toUpperCase()} to the address shown below.`,
+        });
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : "Failed to create crypto payment";
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -426,11 +467,59 @@ const Funds = () => {
           )}
 
           {selectedMethod === "crypto" && (
-            <div className="text-center py-8">
-              <Bitcoin className="h-12 w-12 text-primary mx-auto mb-4" />
-              <p className="text-muted-foreground">
-                Send BTC, ETH, or USDT to complete your payment.
-              </p>
+            <div className="space-y-4">
+              <div className="text-center py-4">
+                <Bitcoin className="h-12 w-12 text-primary mx-auto mb-4" />
+                <p className="text-muted-foreground mb-4">
+                  Pay with cryptocurrency via Quidax. Select your preferred crypto:
+                </p>
+              </div>
+              <div className="flex gap-2 justify-center">
+                {["btc", "eth", "usdt"].map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => { setSelectedCrypto(c); setCryptoAddress(null); }}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      selectedCrypto === c
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-secondary text-muted-foreground hover:bg-accent"
+                    }`}
+                  >
+                    {c.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+              {cryptoAddress && (
+                <div className="bg-secondary/50 rounded-xl p-4 space-y-3 mt-4">
+                  <p className="text-sm font-medium text-foreground">
+                    Send {cryptoAddress.currency} to this address:
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <code className="text-xs bg-background px-3 py-2 rounded-lg break-all flex-1 border border-border">
+                      {cryptoAddress.address}
+                    </code>
+                    <button
+                      onClick={() => copyToClipboard(cryptoAddress.address, "Crypto Address")}
+                      className="text-muted-foreground hover:text-primary transition-colors shrink-0"
+                    >
+                      {copiedField === "Crypto Address" ? <CheckCircle className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  {cryptoAddress.network && (
+                    <p className="text-xs text-muted-foreground">
+                      Network: <span className="font-medium text-foreground">{cryptoAddress.network}</span>
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Reference: <span className="font-mono text-foreground">{cryptoAddress.reference}</span>
+                  </p>
+                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
+                    <p className="text-xs text-foreground">
+                      Your balance will be credited automatically once the deposit is confirmed on the blockchain.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
